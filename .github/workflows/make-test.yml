@@ -1,0 +1,17 @@
+name: make test
+on:
+  pull_request:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  make-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: egor-tensin/setup-clang@v1
+        with:
+          version: 15
+      - run: sudo apt-get -y install libcriterion-dev
+      - run: make test
