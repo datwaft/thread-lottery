@@ -1,4 +1,3 @@
-#include "foo.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,10 +18,6 @@ int main(int argc, char *argv[]) {
            style, color, c);
   }
   putchar('\n');
-  putchar('\n');
-
-  int32_t x = foo(3);
-  printf("%d\n", x);
 
   return EXIT_SUCCESS;
 }
