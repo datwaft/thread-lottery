@@ -105,7 +105,7 @@ $(TEST_BUILD_DIR): | $(BUILD_DIR)
 # ========================
 .PHONY: test
 test: $(TEST_TARGETS)
-	for test_file in $^; do ./$$test_file; done
+	for test_file in $^; do ./$$test_file --verbose; done
 
 .PHONY: clean
 clean:
