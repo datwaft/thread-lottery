@@ -1,19 +1,18 @@
 #include "foo.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "deps/xorshift128plus.c"
+#include "deps/pcg_basic.h"
 
 int main(int argc, char **argv) {
-  s[0] = 69;
-  s[1] = 420;
+  pcg32_srandom(69, 420);
 
-  for (int c = 'A'; c < 'A' + 26; c++) {
+  for (char c = 'A'; c < 'A' + ('Z' - 'A' + 1); c++) {
     // Colors
-    // 31 = RED, 36 = CYAN
-    int color = next() % (36 - 31 + 1) + 31;
+    uint32_t color = pcg32_boundedrand(36 - 31 + 1) + 31;
     // Styles
-    int style = next() % (7 + 1);
+    uint32_t style = pcg32_boundedrand(7 + 1);
     printf("\x1b[%d;%dm"
            "%c"
            "\x1b[0m",
@@ -22,7 +21,7 @@ int main(int argc, char **argv) {
   putchar('\n');
   putchar('\n');
 
-  int x = foo(3);
+  int32_t x = foo(3);
   printf("%d\n", x);
 
   exit(0);

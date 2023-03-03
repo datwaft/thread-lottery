@@ -24,9 +24,10 @@ TARGET := $(BUILD_DIR)/main
 # Source file variables
 # ---------------------
 TARGET_SRC := $(TARGET:$(BUILD_DIR)/%=$(SRC_DIR)/%.c)
-SRCS := $(filter-out $(TARGET_SRC), $(wildcard $(SRC_DIR)/*.c))
-HEADERS := $(wildcard $(HEADER_DIR)/*.h)
-TEST_SRCS := $(wildcard $(TEST_DIR)/*.c)
+SRCS := $(shell find $(SRC_DIR) -type f -path '**/*.c')
+SRCS := $(filter-out $(TARGET_SRC), $(SRCS))
+HEADERS := $(shell find $(HEADER_DIR) -type f -path '**/*.h')
+TEST_SRCS := $(shell find $(TEST_DIR) -type f -path '**/*.c')
 
 # -------------------
 # Byproduct variables
@@ -69,14 +70,17 @@ all_tests: $(TEST_TARGETS)
 .PHONY: dist
 dist: $(DIST)
 
-$(TARGET): $(TARGET_OBJ) $(OBJS) | $(BUILD_DIR)
+$(TARGET): $(TARGET_OBJ) $(OBJS)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
 $(TEST_BUILD_DIR)/%: LDLIBS += -lcriterion
-$(TEST_BUILD_DIR)/%: $(TEST_DIR)/%.c $(OBJS) | $(TEST_BUILD_DIR)
+$(TEST_BUILD_DIR)/%: $(TEST_DIR)/%.c $(OBJS)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 # =================
@@ -84,21 +88,6 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 # =================
 $(DIST): $(TARGET_SRC) $(SRCS) $(HEADERS) $(TEST_SRCS) $(MAKEFILE) $(DOCUMENTATION)
 	tar -zcvf $@ $^
-
-# =====================
-# Folder creation rules
-# =====================
-$(BUILD_DIR):
-	mkdir $@
-
-$(OBJ_DIR): | $(BUILD_DIR)
-	mkdir $@
-
-$(DEPS_DIR): | $(BUILD_DIR)
-	mkdir $@
-
-$(TEST_BUILD_DIR): | $(BUILD_DIR)
-	mkdir $@
 
 # ========================
 # Pseudo-target definition
