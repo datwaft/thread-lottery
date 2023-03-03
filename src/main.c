@@ -5,7 +5,7 @@
 
 #include "deps/pcg_basic.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[]) {
   pcg32_srandom(69, 420);
 
   for (char c = 'A'; c < 'A' + ('Z' - 'A' + 1); c++) {
