@@ -24,5 +24,5 @@ int main(int argc, char **argv) {
   int32_t x = foo(3);
   printf("%d\n", x);
 
-  exit(0);
+  return EXIT_SUCCESS;
 }
