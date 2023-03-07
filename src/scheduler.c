@@ -106,9 +106,8 @@ static void schedule(void) {
   scheduler_internal.current_task = next;
 
   if (next->status == TASK_CREATED) {
-    register void *top = next->stack_top;
-
     // Assign new stack
+    register void *top = next->stack_top;
 #ifdef __x86_64__
     __asm__ __volatile__("MOV %[rs], %%rsp \n" : [rs] "+r"(top)::);
 #elif __arm__
