@@ -3,26 +3,24 @@
 
 #include "scheduler.h"
 
-struct tester_args {
+typedef struct {
   const char *name;
   int iters;
-};
+} args_t;
 
-void tester(void *arg) {
-  int i;
-  struct tester_args *ta = (struct tester_args *)arg;
-  for (i = 0; i < ta->iters; i++) {
-    printf("task %s: %d (%d iterations)\n", ta->name, i, ta->iters);
+void tester(args_t *args) {
+  for (int i = 0; i < args->iters; i++) {
+    printf("task %s: %d (%d iterations)\n", args->name, i, args->iters);
     scheduler_pause_current_task();
   }
-  free(ta);
+  free(args);
 }
 
 void create_test_task(const char *name, int iters) {
-  struct tester_args *ta = malloc(sizeof(*ta));
-  ta->name = name;
-  ta->iters = iters;
-  scheduler_create_task(tester, ta);
+  args_t *args = malloc(sizeof(*args));
+  args->name = name;
+  args->iters = iters;
+  scheduler_create_task((void (*)(void *))tester, args);
 }
 
 int main(int argc, char **argv) {
