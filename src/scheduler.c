@@ -13,7 +13,6 @@ typedef struct {
   enum {
     TASK_CREATED,
     TASK_RUNNING,
-    TASK_WAITING,
   } status;
 
   size_t id;
@@ -40,12 +39,15 @@ struct {
   context_t context;
   // Current task
   task_t *current_task;
-  // TODO: add list of tasks
+  // List of tasks
+  size_t task_n;
+  task_t **tasks;
 } scheduler_internal;
 
 void scheduler_init(void) {
   scheduler_internal.current_task = NULL;
-  // TODO: initialize the list of tasks
+  scheduler_internal.task_n = 0;
+  scheduler_internal.tasks = malloc(sizeof(task_t) * 1024);
 }
 
 void scheduler_create_task(void (*function)(void *), void *args) {
@@ -59,22 +61,39 @@ void scheduler_create_task(void (*function)(void *), void *args) {
   task->stack_size = 16 * 1024;
   task->stack_bottom = malloc(task->stack_size);
   task->stack_top = (int8_t *)task->stack_bottom + task->stack_size;
-  // TODO: add task to list of tasks
+
+  scheduler_internal.tasks[scheduler_internal.task_n] = task;
+  scheduler_internal.task_n += 1;
 }
 
 void scheduler_exit_current_task(void) {
   task_t *task = scheduler_internal.current_task;
-  // TODO: remove task from list of tasks
+
+  // Remove task from task list
+  size_t index = -1;
+  for (size_t i = 0; i < scheduler_internal.task_n; i += 1) {
+    if (scheduler_internal.tasks[i]->id == task->id) {
+      index = i;
+      break;
+    }
+  }
+  for (size_t i = index; i < scheduler_internal.task_n - 1; i += 1) {
+    scheduler_internal.tasks[i] = scheduler_internal.tasks[i + 1];
+  }
+  scheduler_internal.task_n -= 1;
+
   siglongjmp(scheduler_internal.context, EXIT_TASK);
 
   // NOTE: This function never returns.
 }
 
 static task_t *scheduler_choose_task(void) {
-  task_t *task;
-  // TODO: search inside the list and select a task
-
-  // Return NULL if the task was not found.
+  for (size_t i = 0; i < scheduler_internal.task_n; i += 1) {
+    task_t *task = scheduler_internal.tasks[i];
+    if (task->status == TASK_RUNNING || task->status == TASK_CREATED) {
+      return task;
+    }
+  }
   return NULL;
 }
 
@@ -91,9 +110,10 @@ static void schedule(void) {
 
     // Assign new stack
 #ifdef __x86_64__
-    __asm__ volatile("mov %[rs], %%rsp \n" : [rs] "+r"(top)::);
+    __asm__ __volatile__("MOV %[rs], %%rsp \n" : [rs] "+r"(top)::);
 #elif __arm__
     // TODO: check how to that assembly in ARM
+    __asm__ __volatile__("MOV [rs], rsp \n" : [rs] "+r"(top)::);
 #endif
 
     // Run the task function
@@ -104,16 +124,14 @@ static void schedule(void) {
     // VERY bad idea so it's better to just exit instead.
     scheduler_exit_current_task();
   } else {
-    siglongjmp(scheduler_internal.context, true);
+    siglongjmp(next->context, true);
   }
 
   // NOTE: This function never returns.
 }
 
 void scheduler_pause_current_task(void) {
-  if (sigsetjmp(scheduler_internal.current_task->context, false)) {
-    return;
-  } else {
+  if (!sigsetjmp(scheduler_internal.current_task->context, false)) {
     siglongjmp(scheduler_internal.context, SCHEDULE);
   }
 }
@@ -132,6 +150,8 @@ void scheduler_run(void) {
   case INIT:
   case SCHEDULE:
     schedule();
+    // Free list of tasks
+    free(scheduler_internal.tasks);
     return;
   default:
     fprintf(stderr, "There has been an scheduler error: invalid state.\n");

@@ -12,7 +12,7 @@ void tester(void *arg) {
   int i;
   struct tester_args *ta = (struct tester_args *)arg;
   for (i = 0; i < ta->iters; i++) {
-    printf("task %s: %d\n", ta->name, i);
+    printf("task %s: %d (%d iterations)\n", ta->name, i, ta->iters);
     scheduler_pause_current_task();
   }
   free(ta);
