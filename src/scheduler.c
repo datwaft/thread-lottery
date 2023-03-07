@@ -110,7 +110,7 @@ static void schedule(void) {
     register void *top = next->stack_top;
 #ifdef __x86_64__
     __asm__ __volatile__("MOV %[rs], %%rsp \n" : [rs] "+r"(top)::);
-#elif __arm__
+#elif __aarch64__
     // TODO: check how to that assembly in ARM
     __asm__ __volatile__("MOV [rs], rsp \n" : [rs] "+r"(top)::);
 #endif
