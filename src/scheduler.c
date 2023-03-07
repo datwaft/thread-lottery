@@ -88,13 +88,15 @@ void scheduler_exit_current_task(void) {
 }
 
 static task_t *scheduler_choose_task(void) {
-  for (size_t i = 0; i < scheduler_internal.task_n; i += 1) {
-    task_t *task = scheduler_internal.tasks[i];
-    if (task->status == TASK_RUNNING || task->status == TASK_CREATED) {
-      return task;
-    }
+  static size_t last_i = -1;
+  if (scheduler_internal.task_n == 0) {
+    return NULL;
+  } else if (last_i + 1 >= scheduler_internal.task_n) {
+    last_i = 0;
+  } else {
+    last_i += 1;
   }
-  return NULL;
+  return scheduler_internal.tasks[last_i];
 }
 
 static void schedule(void) {
