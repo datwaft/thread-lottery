@@ -112,7 +112,7 @@ static void schedule(void) {
 #ifdef __x86_64__
     asm volatile("mov %0, %%rsp" ::"rm"(next->stack_top));
 #elif __aarch64__
-    asm volatile("mov %0, %%sp" ::"rm"(next->stack_top));
+    asm volatile("mov %0, sp" : "+rm"(next->stack_top));
 #endif
 
     // Run the task function
