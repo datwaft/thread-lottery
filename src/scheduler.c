@@ -109,11 +109,10 @@ static void schedule(void) {
 
   if (next->status == TASK_CREATED) {
     // Assign new stack
-    register void *top = next->stack_top;
 #ifdef __x86_64__
-    asm volatile("mov %0, %%rsp" : "+r"(top));
+    asm volatile("mov %0, %%rsp" ::"rm"(next->stack_top));
 #elif __aarch64__
-    asm volatile("mov %0, %%sp" : "+r"(top));
+    asm volatile("mov %0, %%sp" ::"rm"(next->stack_top));
 #endif
 
     // Run the task function
