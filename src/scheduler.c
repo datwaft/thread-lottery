@@ -159,3 +159,6 @@ void scheduler_run(void) {
     return;
   }
 }
+
+// The code here was inspired by:
+// https://brennan.io/2020/05/24/userspace-cooperative-multitasking/
