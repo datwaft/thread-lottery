@@ -5,12 +5,12 @@
 
 typedef struct {
   const char *name;
-  int iters;
+  size_t iters;
 } args_t;
 
 void tester(args_t *args) {
-  for (int i = 0; i < args->iters; i++) {
-    printf("task %s: %d (%d iterations)\n", args->name, i, args->iters);
+  for (size_t i = 0; i < args->iters; i++) {
+    printf("task %s: %zu (%zu iterations)\n", args->name, i, args->iters);
     scheduler_pause_current_task();
   }
   free(args);
