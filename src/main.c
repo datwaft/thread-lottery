@@ -1,57 +1,35 @@
-#include <setjmp.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "deps/pcg_basic.h"
+#include "scheduler.h"
 
-static void *coarg;
+struct tester_args {
+  const char *name;
+  int iters;
+};
 
-void *coroutine_goto(sigjmp_buf here, sigjmp_buf there, void *arg) {
-  coarg = arg;
-  if (sigsetjmp(here, false))
-    return coarg;
-  siglongjmp(there, 1);
-}
-
-#define STACK_DIRECTION -
-#define STACK_SIZE (1 << 12)
-
-static char *top_of_the_stack;
-
-void *coroutine_start(sigjmp_buf here, void (*fun)(void *), void *arg) {
-  if (top_of_the_stack == NULL)
-    top_of_the_stack = (char *)&arg;
-  top_of_the_stack += STACK_DIRECTION STACK_SIZE;
-  char n[STACK_DIRECTION(top_of_the_stack - (char *)&arg)];
-  coarg = n;
-  if (sigsetjmp(here, false))
-    return coarg;
-  fun(arg);
-  abort();
-}
-
-#define MAX_THREAD_NUMBER 10
-
-static sigjmp_buf threads[MAX_THREAD_NUMBER];
-static int n_threads = 0;
-
-static void comain(void *arg) {
-  int *p = arg, i = *p;
-  for (;;) {
-    printf("coroutine %d at %p with %p\n", i, (void *)&i, arg);
-    int n = pcg32_boundedrand(n_threads);
-    printf("jumping to %d\n", n);
-    arg = coroutine_goto(threads[i], threads[n], (char *)arg + 1);
+void tester(void *arg) {
+  int i;
+  struct tester_args *ta = (struct tester_args *)arg;
+  for (i = 0; i < ta->iters; i++) {
+    printf("task %s: %d\n", ta->name, i);
+    scheduler_pause_current_task();
   }
+  free(ta);
 }
 
-int main(void) {
-  pcg32_srandom(69, 420);
+void create_test_task(const char *name, int iters) {
+  struct tester_args *ta = malloc(sizeof(*ta));
+  ta->name = name;
+  ta->iters = iters;
+  scheduler_create_task(tester, ta);
+}
 
-  while (++n_threads < MAX_THREAD_NUMBER) {
-    printf("spawning %d\n", n_threads);
-    coroutine_start(threads[0], comain, &n_threads);
-  }
-  return 0;
+int main(int argc, char **argv) {
+  scheduler_init();
+  create_test_task("first", 5);
+  create_test_task("second", 2);
+  scheduler_run();
+  printf("Finished running all tasks!\n");
+  return EXIT_SUCCESS;
 }
