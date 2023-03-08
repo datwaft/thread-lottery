@@ -42,7 +42,7 @@ struct {
   // List of tasks
   size_t task_list_length;
   task_t **task_list;
-} scheduler_internal;
+} __scheduler;
 
 static task_t *scheduler_choose_task(void);
 static void schedule(void);
@@ -50,13 +50,13 @@ static void scheduler_free_current_task(void);
 static void scheduler_free_task_list(void);
 
 void scheduler_init(void) {
-  scheduler_internal.current_task = NULL;
-  scheduler_internal.task_list_length = 0;
-  scheduler_internal.task_list = malloc(sizeof(task_t) * MAX_THREAD_N);
+  __scheduler.current_task = NULL;
+  __scheduler.task_list_length = 0;
+  __scheduler.task_list = malloc(sizeof(task_t) * MAX_THREAD_N);
 }
 
 void scheduler_create_task(void (*function)(void *), void *args) {
-  if (scheduler_internal.task_list_length >= MAX_THREAD_N) {
+  if (__scheduler.task_list_length >= MAX_THREAD_N) {
     fprintf(stderr,
             "Tried to create more tasks than the artificial maximum.\n");
     exit(EXIT_FAILURE);
@@ -75,29 +75,29 @@ void scheduler_create_task(void (*function)(void *), void *args) {
   task->stack_bottom = malloc(task->stack_size);
   task->stack_top = (int8_t *)task->stack_bottom + task->stack_size;
 
-  scheduler_internal.task_list[scheduler_internal.task_list_length] = task;
-  scheduler_internal.task_list_length += 1;
+  __scheduler.task_list[__scheduler.task_list_length] = task;
+  __scheduler.task_list_length += 1;
 }
 
 void scheduler_exit_current_task(void) {
-  task_t *task = scheduler_internal.current_task;
+  task_t *task = __scheduler.current_task;
 
   // Remove task from task list
   // This algorithm just left shifts everything after the index.
   size_t index = -1;
-  for (size_t i = 0; i < scheduler_internal.task_list_length; i += 1) {
-    if (scheduler_internal.task_list[i] == task) {
+  for (size_t i = 0; i < __scheduler.task_list_length; i += 1) {
+    if (__scheduler.task_list[i] == task) {
       index = i;
       break;
     }
   }
-  for (size_t i = index; i < scheduler_internal.task_list_length - 1; i += 1) {
-    scheduler_internal.task_list[i] = scheduler_internal.task_list[i + 1];
+  for (size_t i = index; i < __scheduler.task_list_length - 1; i += 1) {
+    __scheduler.task_list[i] = __scheduler.task_list[i + 1];
   }
-  scheduler_internal.task_list_length -= 1;
+  __scheduler.task_list_length -= 1;
 
   // Go to the scheduler context.
-  siglongjmp(scheduler_internal.context, SCHEDULER_EXIT_TASK);
+  siglongjmp(__scheduler.context, SCHEDULER_EXIT_TASK);
 
   // NOTE: this function never returns.
   fprintf(stderr, "The function scheduler_exit_current_task() has returned.\n"
@@ -106,13 +106,13 @@ void scheduler_exit_current_task(void) {
 }
 
 void scheduler_pause_current_task(void) {
-  if (!sigsetjmp(scheduler_internal.current_task->context, false)) {
-    siglongjmp(scheduler_internal.context, SCHEDULER_SCHEDULE);
+  if (!sigsetjmp(__scheduler.current_task->context, false)) {
+    siglongjmp(__scheduler.context, SCHEDULER_SCHEDULE);
   }
 }
 
 void scheduler_run(void) {
-  switch (sigsetjmp(scheduler_internal.context, false)) {
+  switch (sigsetjmp(__scheduler.context, false)) {
   case SCHEDULER_EXIT_TASK:
     scheduler_free_current_task();
     // NOTE: intentional passthrough.
@@ -135,7 +135,7 @@ static void schedule(void) {
     return;
   }
 
-  scheduler_internal.current_task = next;
+  __scheduler.current_task = next;
 
   if (next->status == TASK_CREATED) {
     // Assign new stack.
@@ -162,26 +162,26 @@ static task_t *scheduler_choose_task(void) {
   // Currently this is a round robin algorithm.
   // TODO: make it lottery scheduler.
   static size_t last_i = -1;
-  if (scheduler_internal.task_list_length == 0) {
+  if (__scheduler.task_list_length == 0) {
     return NULL;
-  } else if (last_i + 1 >= scheduler_internal.task_list_length) {
+  } else if (last_i + 1 >= __scheduler.task_list_length) {
     last_i = 0;
   } else {
     last_i += 1;
   }
-  return scheduler_internal.task_list[last_i];
+  return __scheduler.task_list[last_i];
 }
 
 static void scheduler_free_current_task(void) {
-  task_t *task = scheduler_internal.current_task;
-  scheduler_internal.current_task = NULL;
+  task_t *task = __scheduler.current_task;
+  __scheduler.current_task = NULL;
   free(task->stack_bottom);
   free(task);
 }
 
 static void scheduler_free_task_list(void) {
-  task_t **task_list = scheduler_internal.task_list;
-  scheduler_internal.task_list = NULL;
+  task_t **task_list = __scheduler.task_list;
+  __scheduler.task_list = NULL;
   free(task_list);
 }
 
