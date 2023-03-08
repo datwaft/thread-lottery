@@ -6,11 +6,11 @@
 
 typedef struct {
   size_t name;
-  size_t iters;
+  size_t iterations;
 } args_t;
 
 void tester(args_t *args) {
-  for (size_t i = 0; i < args->iters; i++) {
+  for (size_t i = 0; i < args->iterations; i++) {
     printf("\x1b[2m"
            "task "
            "\x1b[0;%lum"
@@ -25,7 +25,7 @@ void tester(args_t *args) {
            "%zu"
            "\x1b[0m"
            "\n",
-           31 + args->name, args->name, i + 1, args->iters);
+           31 + args->name, args->name, i + 1, args->iterations);
     scheduler_pause_current_task();
   }
   free(args);
@@ -34,7 +34,7 @@ void tester(args_t *args) {
 void create_test_task(size_t name, int iters) {
   args_t *args = malloc(sizeof(*args));
   args->name = name;
-  args->iters = iters;
+  args->iterations = iters;
   scheduler_create_task((void (*)(void *))tester, args);
 }
 
