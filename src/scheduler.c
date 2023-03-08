@@ -7,6 +7,11 @@
 
 #include "scheduler.h"
 
+// Artificial maximum of threads
+// WARNING: Cannot be too high as we are using an static array and
+// initializing it from the start.
+#define MAX_THREAD_N 1024
+
 typedef sigjmp_buf context_t;
 
 typedef struct {
@@ -29,9 +34,9 @@ typedef struct {
 } task_t;
 
 enum {
-  INIT = 0,
-  SCHEDULE,
-  EXIT_TASK,
+  SCHEDULER_INITIALIZED = 0,
+  SCHEDULER_SCHEDULE,
+  SCHEDULER_EXIT_TASK,
 };
 
 struct {
@@ -47,10 +52,16 @@ struct {
 void scheduler_init(void) {
   scheduler_internal.current_task = NULL;
   scheduler_internal.task_n = 0;
-  scheduler_internal.tasks = malloc(sizeof(task_t) * 1024);
+  scheduler_internal.tasks = malloc(sizeof(task_t) * MAX_THREAD_N);
 }
 
 void scheduler_create_task(void (*function)(void *), void *args) {
+  if (scheduler_internal.task_n >= MAX_THREAD_N) {
+    fprintf(stderr,
+            "Tried to create more tasks than the artificial maximum.\n");
+    exit(EXIT_FAILURE);
+  }
+
   static size_t id = 1;
   task_t *task = malloc(sizeof(*task));
   task->status = TASK_CREATED;
@@ -70,6 +81,7 @@ void scheduler_exit_current_task(void) {
   task_t *task = scheduler_internal.current_task;
 
   // Remove task from task list
+  // This algorithm just shifts everything after the index.
   size_t index = -1;
   for (size_t i = 0; i < scheduler_internal.task_n; i += 1) {
     if (scheduler_internal.tasks[i]->id == task->id) {
@@ -82,9 +94,12 @@ void scheduler_exit_current_task(void) {
   }
   scheduler_internal.task_n -= 1;
 
-  siglongjmp(scheduler_internal.context, EXIT_TASK);
+  siglongjmp(scheduler_internal.context, SCHEDULER_EXIT_TASK);
 
-  // NOTE: This function never returns.
+  // NOTE: this function never returns.
+  fprintf(stderr, "The function scheduler_exit_current_task() has returned.\n"
+                  "It should never return.\n");
+  exit(EXIT_FAILURE);
 }
 
 static task_t *scheduler_choose_task(void) {
@@ -101,33 +116,40 @@ static task_t *scheduler_choose_task(void) {
 
 static void schedule(void) {
   task_t *next = scheduler_choose_task();
+  // This only happens if there are no tasks to schedule.
   if (next == NULL) {
+    // Free memory assigned for list of tasks.
+    // This may change if we select other structure to implement the list.
+    free(scheduler_internal.tasks);
+    // NOTE: this is the only case in which this function may return.
     return;
   }
 
   scheduler_internal.current_task = next;
 
   if (next->status == TASK_CREATED) {
-    // Assign new stack
+    // Assign new stack.
     asm volatile("mov %0, %%rsp" ::"rm"(next->stack_top));
 
-    // Run the task function
+    // Run the task function.
     next->status = TASK_RUNNING;
     next->function(next->args);
 
-    // WARNING: As the stack point is back where it was set returning would be a
-    // VERY bad idea so it's better to just exit instead.
+    // Exit the task.
     scheduler_exit_current_task();
   } else {
     siglongjmp(next->context, true);
   }
 
-  // NOTE: This function never returns.
+  // NOTE: this function never returns implicitly.
+  fprintf(stderr, "The function schedule() has returned implicitly.\n"
+                  "It should never return implicitly.\n");
+  exit(EXIT_FAILURE);
 }
 
 void scheduler_pause_current_task(void) {
   if (!sigsetjmp(scheduler_internal.current_task->context, false)) {
-    siglongjmp(scheduler_internal.context, SCHEDULE);
+    siglongjmp(scheduler_internal.context, SCHEDULER_SCHEDULE);
   }
 }
 
@@ -140,17 +162,16 @@ static void scheduler_free_current_task(void) {
 
 void scheduler_run(void) {
   switch (sigsetjmp(scheduler_internal.context, false)) {
-  case EXIT_TASK:
+  case SCHEDULER_EXIT_TASK:
     scheduler_free_current_task();
-  case INIT:
-  case SCHEDULE:
+    // NOTE: intentional passthrough.
+  case SCHEDULER_INITIALIZED:
+  case SCHEDULER_SCHEDULE:
     schedule();
-    // Free list of tasks
-    free(scheduler_internal.tasks);
     return;
   default:
-    fprintf(stderr, "There has been an scheduler error: invalid state.\n");
-    return;
+    fprintf(stderr, "An invalid scheduler flag has been raised, aborting.\n");
+    exit(EXIT_FAILURE);
   }
 }
 
