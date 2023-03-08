@@ -11,21 +11,39 @@ typedef struct args_t {
 
 void tester(args_t *args) {
   for (size_t i = 0; i < args->iterations; i++) {
-    printf("\x1b[2m"
-           "task "
-           "\x1b[0;%lum"
-           "%zu"
-           "\x1b[0;2m"
-           ": "
-           "\x1b[0m"
-           "%zu"
-           "\x1b[0;2m"
-           "/"
-           "\x1b[0m"
-           "%zu"
-           "\x1b[0m"
-           "\n",
-           31 + args->name, args->name, i + 1, args->iterations);
+    if (i + 1 == args->iterations) {
+      printf("\x1b[2;9m"
+             "task "
+             "\x1b[0;%lu;9m"
+             "%zu"
+             "\x1b[0;2;9m"
+             ": "
+             "\x1b[0;9m"
+             "%zu"
+             "\x1b[0;2;9m"
+             "/"
+             "\x1b[0;9m"
+             "%zu"
+             "\x1b[0m"
+             "\n",
+             31 + args->name, args->name, i + 1, args->iterations);
+    } else {
+      printf("\x1b[2m"
+             "task "
+             "\x1b[0;%lum"
+             "%zu"
+             "\x1b[0;2m"
+             ": "
+             "\x1b[0m"
+             "%zu"
+             "\x1b[0;2m"
+             "/"
+             "\x1b[0m"
+             "%zu"
+             "\x1b[0m"
+             "\n",
+             31 + args->name, args->name, i + 1, args->iterations);
+    }
     scheduler_pause_current_task();
   }
   free(args);
