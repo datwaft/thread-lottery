@@ -24,10 +24,10 @@ TARGET := $(BUILD_DIR)/main
 # Source file variables
 # ---------------------
 TARGET_SRC := $(TARGET:$(BUILD_DIR)/%=$(SRC_DIR)/%.c)
-SRCS := $(shell find $(SRC_DIR) -type f -path '**/*.c')
+SRCS := $(shell find $(SRC_DIR) -type f -path '**/*.c' 2> /dev/null)
 SRCS := $(filter-out $(TARGET_SRC), $(SRCS))
-HEADERS := $(shell find $(HEADER_DIR) -type f -path '**/*.h')
-TEST_SRCS := $(shell find $(TEST_DIR) -type f -path '**/*.c')
+HEADERS := $(shell find $(HEADER_DIR) -type f -path '**/*.h' 2> /dev/null)
+TEST_SRCS := $(shell find $(TEST_DIR) -type f -path '**/*.c' 2> /dev/null)
 
 # -------------------
 # Byproduct variables
@@ -56,7 +56,7 @@ CFLAGS += -Wall -Wextra -Wpedantic \
 					-Wformat=2 -Wno-unused-parameter -Wshadow \
 					-Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
 					-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
-CFLAGS += -std=c11
+CFLAGS += -Wno-language-extension-token
 CPPFLAGS += -I$(HEADER_DIR) -MMD -MP
 LDLIBS += -lm
 

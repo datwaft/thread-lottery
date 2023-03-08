@@ -1,23 +1,49 @@
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "deps/pcg_basic.h"
+#include "scheduler.h"
 
-int main(int argc, char *argv[]) {
-  pcg32_srandom(69, 420);
+typedef struct {
+  size_t name;
+  size_t iterations;
+} args_t;
 
-  for (char c = 'A'; c < 'A' + ('Z' - 'A' + 1); c++) {
-    // Colors
-    uint32_t color = pcg32_boundedrand(36 - 31 + 1) + 31;
-    // Styles
-    uint32_t style = pcg32_boundedrand(7 + 1);
-    printf("\x1b[%d;%dm"
-           "%c"
-           "\x1b[0m",
-           style, color, c);
+void tester(args_t *args) {
+  for (size_t i = 0; i < args->iterations; i++) {
+    printf("\x1b[2m"
+           "task "
+           "\x1b[0;%lum"
+           "%zu"
+           "\x1b[0;2m"
+           ": "
+           "\x1b[0m"
+           "%zu"
+           "\x1b[0;2m"
+           "/"
+           "\x1b[0m"
+           "%zu"
+           "\x1b[0m"
+           "\n",
+           31 + args->name, args->name, i + 1, args->iterations);
+    scheduler_pause_current_task();
   }
-  putchar('\n');
+  free(args);
+}
 
+void create_test_task(size_t name, int iters) {
+  args_t *args = malloc(sizeof(*args));
+  args->name = name;
+  args->iterations = iters;
+  scheduler_create_task((void (*)(void *))tester, args);
+}
+
+int main(int argc, char **argv) {
+  scheduler_init();
+  for (size_t i = 0; i < 4; ++i) {
+    create_test_task(i, pcg32_boundedrand(10 - 3) + 3);
+  }
+  scheduler_run();
+  printf("Finished running all tasks!\n");
   return EXIT_SUCCESS;
 }
