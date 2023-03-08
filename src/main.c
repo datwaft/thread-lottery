@@ -4,7 +4,7 @@
 #include "deps/pcg_basic.h"
 #include "scheduler.h"
 
-typedef struct {
+typedef struct args_t {
   size_t name;
   size_t iterations;
 } args_t;

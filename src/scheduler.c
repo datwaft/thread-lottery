@@ -9,7 +9,7 @@
 
 typedef sigjmp_buf context_t;
 
-typedef struct {
+typedef struct task_t {
   enum {
     TASK_CREATED,
     TASK_RUNNING,
