@@ -7,11 +7,6 @@
 
 #include "scheduler.h"
 
-// Artificial maximum of threads
-// WARNING: Cannot be too high as we are using an static array and
-// initializing it from the start.
-#define MAX_THREAD_N 1024
-
 typedef sigjmp_buf context_t;
 
 typedef struct {
@@ -45,55 +40,63 @@ struct {
   // Current task
   task_t *current_task;
   // List of tasks
-  size_t task_n;
-  task_t **tasks;
+  size_t task_list_length;
+  task_t **task_list;
 } scheduler_internal;
+
+static task_t *scheduler_choose_task(void);
+static void schedule(void);
+static void scheduler_free_current_task(void);
+static void scheduler_free_task_list(void);
 
 void scheduler_init(void) {
   scheduler_internal.current_task = NULL;
-  scheduler_internal.task_n = 0;
-  scheduler_internal.tasks = malloc(sizeof(task_t) * MAX_THREAD_N);
+  scheduler_internal.task_list_length = 0;
+  scheduler_internal.task_list = malloc(sizeof(task_t) * MAX_THREAD_N);
 }
 
 void scheduler_create_task(void (*function)(void *), void *args) {
-  if (scheduler_internal.task_n >= MAX_THREAD_N) {
+  if (scheduler_internal.task_list_length >= MAX_THREAD_N) {
     fprintf(stderr,
             "Tried to create more tasks than the artificial maximum.\n");
     exit(EXIT_FAILURE);
   }
 
+  // This value is saved between executions of this function.
   static size_t id = 1;
+
   task_t *task = malloc(sizeof(*task));
   task->status = TASK_CREATED;
   task->function = function;
   task->args = args;
   task->id = id;
   id += 1;
-  task->stack_size = 16 * 1024;
+  task->stack_size = 16 * 1024; // This is fairly arbitrary.
   task->stack_bottom = malloc(task->stack_size);
   task->stack_top = (int8_t *)task->stack_bottom + task->stack_size;
 
-  scheduler_internal.tasks[scheduler_internal.task_n] = task;
-  scheduler_internal.task_n += 1;
+  scheduler_internal.task_list[scheduler_internal.task_list_length] = task;
+  scheduler_internal.task_list_length += 1;
 }
 
 void scheduler_exit_current_task(void) {
   task_t *task = scheduler_internal.current_task;
 
   // Remove task from task list
-  // This algorithm just shifts everything after the index.
+  // This algorithm just left shifts everything after the index.
   size_t index = -1;
-  for (size_t i = 0; i < scheduler_internal.task_n; i += 1) {
-    if (scheduler_internal.tasks[i]->id == task->id) {
+  for (size_t i = 0; i < scheduler_internal.task_list_length; i += 1) {
+    if (scheduler_internal.task_list[i] == task) {
       index = i;
       break;
     }
   }
-  for (size_t i = index; i < scheduler_internal.task_n - 1; i += 1) {
-    scheduler_internal.tasks[i] = scheduler_internal.tasks[i + 1];
+  for (size_t i = index; i < scheduler_internal.task_list_length - 1; i += 1) {
+    scheduler_internal.task_list[i] = scheduler_internal.task_list[i + 1];
   }
-  scheduler_internal.task_n -= 1;
+  scheduler_internal.task_list_length -= 1;
 
+  // Go to the scheduler context.
   siglongjmp(scheduler_internal.context, SCHEDULER_EXIT_TASK);
 
   // NOTE: this function never returns.
@@ -102,25 +105,32 @@ void scheduler_exit_current_task(void) {
   exit(EXIT_FAILURE);
 }
 
-static task_t *scheduler_choose_task(void) {
-  static size_t last_i = -1;
-  if (scheduler_internal.task_n == 0) {
-    return NULL;
-  } else if (last_i + 1 >= scheduler_internal.task_n) {
-    last_i = 0;
-  } else {
-    last_i += 1;
+void scheduler_pause_current_task(void) {
+  if (!sigsetjmp(scheduler_internal.current_task->context, false)) {
+    siglongjmp(scheduler_internal.context, SCHEDULER_SCHEDULE);
   }
-  return scheduler_internal.tasks[last_i];
+}
+
+void scheduler_run(void) {
+  switch (sigsetjmp(scheduler_internal.context, false)) {
+  case SCHEDULER_EXIT_TASK:
+    scheduler_free_current_task();
+    // NOTE: intentional passthrough.
+  case SCHEDULER_INITIALIZED:
+  case SCHEDULER_SCHEDULE:
+    schedule();
+    return;
+  default:
+    fprintf(stderr, "An invalid scheduler flag has been raised, aborting.\n");
+    exit(EXIT_FAILURE);
+  }
 }
 
 static void schedule(void) {
   task_t *next = scheduler_choose_task();
   // This only happens if there are no tasks to schedule.
   if (next == NULL) {
-    // Free memory assigned for list of tasks.
-    // This may change if we select other structure to implement the list.
-    free(scheduler_internal.tasks);
+    scheduler_free_task_list();
     // NOTE: this is the only case in which this function may return.
     return;
   }
@@ -138,6 +148,7 @@ static void schedule(void) {
     // Exit the task.
     scheduler_exit_current_task();
   } else {
+    // Go to the current task context.
     siglongjmp(next->context, true);
   }
 
@@ -147,10 +158,18 @@ static void schedule(void) {
   exit(EXIT_FAILURE);
 }
 
-void scheduler_pause_current_task(void) {
-  if (!sigsetjmp(scheduler_internal.current_task->context, false)) {
-    siglongjmp(scheduler_internal.context, SCHEDULER_SCHEDULE);
+static task_t *scheduler_choose_task(void) {
+  // Currently this is a round robin algorithm.
+  // TODO: make it lottery scheduler.
+  static size_t last_i = -1;
+  if (scheduler_internal.task_list_length == 0) {
+    return NULL;
+  } else if (last_i + 1 >= scheduler_internal.task_list_length) {
+    last_i = 0;
+  } else {
+    last_i += 1;
   }
+  return scheduler_internal.task_list[last_i];
 }
 
 static void scheduler_free_current_task(void) {
@@ -160,19 +179,10 @@ static void scheduler_free_current_task(void) {
   free(task);
 }
 
-void scheduler_run(void) {
-  switch (sigsetjmp(scheduler_internal.context, false)) {
-  case SCHEDULER_EXIT_TASK:
-    scheduler_free_current_task();
-    // NOTE: intentional passthrough.
-  case SCHEDULER_INITIALIZED:
-  case SCHEDULER_SCHEDULE:
-    schedule();
-    return;
-  default:
-    fprintf(stderr, "An invalid scheduler flag has been raised, aborting.\n");
-    exit(EXIT_FAILURE);
-  }
+static void scheduler_free_task_list(void) {
+  task_t **task_list = scheduler_internal.task_list;
+  scheduler_internal.task_list = NULL;
+  free(task_list);
 }
 
 // The code here was inspired by:

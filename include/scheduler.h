@@ -1,6 +1,11 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
+// Artificial maximum of threads.
+// WARNING: Cannot be too high as we are using an static array and
+// initializing it from the start.
+#define MAX_THREAD_N 1024
+
 // Call once to initialize the scheduler.
 void scheduler_init(void);
 
