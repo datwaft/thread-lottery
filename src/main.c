@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "deps/pcg_basic.h"
 #include "scheduler.h"

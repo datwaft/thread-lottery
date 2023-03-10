@@ -1,9 +1,11 @@
 #include <setjmp.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "deps/kvec.h"
 #include "deps/pcg_basic.h"
@@ -54,11 +56,13 @@ struct {
 static task_t *scheduler_choose_task(void);
 static void schedule(void);
 static void scheduler_free_current_task(void);
+static void scheduler_timer_callback(int signum);
 static void scheduler_free_task_list(void);
 
 void scheduler_init(void) {
   __scheduler.current_task = NULL;
   kv_init(__scheduler.tasks);
+  signal(SIGALRM, scheduler_timer_callback);
 }
 
 void scheduler_on_pause(void (*callback)(void *)) {
@@ -150,6 +154,10 @@ void scheduler_run(void) {
   }
 }
 
+static void scheduler_timer_callback(int signum) {
+  scheduler_pause_current_task();
+}
+
 static void schedule(void) {
   task_t *next = scheduler_choose_task();
   // This only happens if there are no tasks to schedule.
@@ -167,12 +175,16 @@ static void schedule(void) {
 
     // Run the task function.
     next->status = TASK_RUNNING;
+    alarm(1);
+    printf("Starting task...\n");
     next->function(next->args);
 
     // Exit the task.
     scheduler_exit_current_task();
   } else {
     // Go to the current task context.
+    printf("Returning to task...\n");
+    alarm(1);
     siglongjmp(next->context, true);
   }
 
