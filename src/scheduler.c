@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "deps/kvec.h"
 #include "scheduler.h"
 
 typedef sigjmp_buf context_t;
@@ -40,8 +41,7 @@ struct {
   // Current task
   task_t *current_task;
   // List of tasks
-  size_t task_list_length;
-  task_t **task_list;
+  kvec_t(task_t *) tasks;
 } __scheduler;
 
 static task_t *scheduler_choose_task(void);
@@ -51,17 +51,10 @@ static void scheduler_free_task_list(void);
 
 void scheduler_init(void) {
   __scheduler.current_task = NULL;
-  __scheduler.task_list_length = 0;
-  __scheduler.task_list = malloc(sizeof(task_t) * MAX_THREAD_N);
+  kv_init(__scheduler.tasks);
 }
 
 void scheduler_create_task(void (*function)(void *), void *args) {
-  if (__scheduler.task_list_length >= MAX_THREAD_N) {
-    fprintf(stderr,
-            "Tried to create more tasks than the artificial maximum.\n");
-    exit(EXIT_FAILURE);
-  }
-
   // This value is saved between executions of this function.
   static size_t id = 1;
 
@@ -75,26 +68,31 @@ void scheduler_create_task(void (*function)(void *), void *args) {
   task->stack_bottom = malloc(task->stack_size);
   task->stack_top = (int8_t *)task->stack_bottom + task->stack_size;
 
-  __scheduler.task_list[__scheduler.task_list_length] = task;
-  __scheduler.task_list_length += 1;
+  kv_push(task_t *, __scheduler.tasks, task);
 }
 
 void scheduler_exit_current_task(void) {
-  task_t *task = __scheduler.current_task;
+  task_t *current_task = __scheduler.current_task;
 
-  // Remove task from task list
-  // This algorithm just left shifts everything after the index.
-  size_t index = -1;
-  for (size_t i = 0; i < __scheduler.task_list_length; i += 1) {
-    if (__scheduler.task_list[i] == task) {
+  // Find current task index in array
+  int index = -1;
+  for (size_t i = 0; i < kv_size(__scheduler.tasks); ++i) {
+    if (kv_A(__scheduler.tasks, i) == current_task) {
       index = i;
       break;
     }
   }
-  for (size_t i = index; i < __scheduler.task_list_length - 1; i += 1) {
-    __scheduler.task_list[i] = __scheduler.task_list[i + 1];
+  if (index == -1) {
+    fprintf(stderr, "The current task wasn't found in the task array.\n"
+                    "This should never happen.\n");
+    exit(EXIT_FAILURE);
   }
-  __scheduler.task_list_length -= 1;
+
+  // Shift every task after the index to the left and remove the last element.
+  for (size_t i = index; i < kv_size(__scheduler.tasks); ++i) {
+    kv_A(__scheduler.tasks, i) = kv_A(__scheduler.tasks, i + 1);
+  }
+  kv_pop(__scheduler.tasks);
 
   // Go to the scheduler context.
   siglongjmp(__scheduler.context, SCHEDULER_EXIT_TASK);
@@ -159,17 +157,12 @@ static void schedule(void) {
 }
 
 static task_t *scheduler_choose_task(void) {
-  // Currently this is a round robin algorithm.
+  // Currently this is FIFO algorithm.
   // TODO: make it lottery scheduler.
-  static size_t last_i = -1;
-  if (__scheduler.task_list_length == 0) {
+  if (kv_size(__scheduler.tasks) == 0) {
     return NULL;
-  } else if (last_i + 1 >= __scheduler.task_list_length) {
-    last_i = 0;
-  } else {
-    last_i += 1;
   }
-  return __scheduler.task_list[last_i];
+  return kv_A(__scheduler.tasks, 0);
 }
 
 static void scheduler_free_current_task(void) {
@@ -179,11 +172,7 @@ static void scheduler_free_current_task(void) {
   free(task);
 }
 
-static void scheduler_free_task_list(void) {
-  task_t **task_list = __scheduler.task_list;
-  __scheduler.task_list = NULL;
-  free(task_list);
-}
+static void scheduler_free_task_list(void) { kv_destroy(__scheduler.tasks); }
 
 // The code here was inspired by:
 // https://brennan.io/2020/05/24/userspace-cooperative-multitasking/
