@@ -24,9 +24,11 @@ typedef struct task_t {
   void (*function)(void *);
   void *args;
 
-  void *stack_bottom;
-  void *stack_top;
-  size_t stack_size;
+  struct {
+    void *bottom;
+    void *top;
+    size_t size;
+  } stack;
 } task_t;
 
 enum {
@@ -64,9 +66,9 @@ void scheduler_create_task(void (*function)(void *), void *args) {
   task->args = args;
   task->id = id;
   id += 1;
-  task->stack_size = 16 * 1024; // This is fairly arbitrary.
-  task->stack_bottom = malloc(task->stack_size);
-  task->stack_top = (int8_t *)task->stack_bottom + task->stack_size;
+  task->stack.size = 16 * 1024; // This is fairly arbitrary.
+  task->stack.bottom = malloc(task->stack.size);
+  task->stack.top = (int8_t *)task->stack.bottom + task->stack.size;
 
   kv_push(task_t *, __scheduler.tasks, task);
 }
@@ -137,7 +139,7 @@ static void schedule(void) {
 
   if (next->status == TASK_CREATED) {
     // Assign new stack.
-    asm volatile("mov %0, %%rsp" ::"rm"(next->stack_top));
+    asm volatile("mov %0, %%rsp" ::"rm"(next->stack.top));
 
     // Run the task function.
     next->status = TASK_RUNNING;
@@ -168,7 +170,7 @@ static task_t *scheduler_choose_task(void) {
 static void scheduler_free_current_task(void) {
   task_t *task = __scheduler.current_task;
   __scheduler.current_task = NULL;
-  free(task->stack_bottom);
+  free(task->stack.bottom);
   free(task);
 }
 
