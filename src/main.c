@@ -53,7 +53,7 @@ void create_test_task(size_t name, int iters) {
   args_t *args = malloc(sizeof(*args));
   args->name = name;
   args->iterations = iters;
-  scheduler_create_task((void (*)(void *))tester, args);
+  scheduler_create_task((void (*)(void *))tester, args, 5);
 }
 
 int main(int argc, char **argv) {

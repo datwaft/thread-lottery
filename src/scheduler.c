@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "deps/kvec.h"
+#include "deps/pcg_basic.h"
 #include "scheduler.h"
 
 typedef sigjmp_buf context_t;
@@ -17,6 +18,9 @@ typedef struct task_t {
   } status;
 
   size_t id;
+
+  // For lottery scheduling.
+  int ticket_n;
 
   // This is where to jump back in order to resume the execution.
   context_t context;
@@ -40,10 +44,12 @@ enum {
 struct {
   // Where to jump back to perform scheduling.
   context_t context;
-  // Current task
+  // Current task.
   task_t *current_task;
-  // List of tasks
+  // List of tasks.
   kvec_t(task_t *) tasks;
+  // For lottery scheduling.
+  int ticket_total;
 } __scheduler;
 
 static task_t *scheduler_choose_task(void);
@@ -56,7 +62,7 @@ void scheduler_init(void) {
   kv_init(__scheduler.tasks);
 }
 
-void scheduler_create_task(void (*function)(void *), void *args) {
+void scheduler_create_task(void (*function)(void *), void *args, int ticket_n) {
   // This value is saved between executions of this function.
   static size_t id = 1;
 
@@ -66,6 +72,8 @@ void scheduler_create_task(void (*function)(void *), void *args) {
   task->args = args;
   task->id = id;
   id += 1;
+  task->ticket_n = ticket_n;
+  __scheduler.ticket_total += ticket_n;
   task->stack.size = 16 * 1024; // This is fairly arbitrary.
   task->stack.bottom = malloc(task->stack.size);
   task->stack.top = (int8_t *)task->stack.bottom + task->stack.size;
@@ -95,6 +103,9 @@ void scheduler_exit_current_task(void) {
     kv_A(__scheduler.tasks, i) = kv_A(__scheduler.tasks, i + 1);
   }
   kv_pop(__scheduler.tasks);
+
+  // Remove from the ticket total
+  __scheduler.ticket_total -= current_task->ticket_n;
 
   // Go to the scheduler context.
   siglongjmp(__scheduler.context, SCHEDULER_EXIT_TASK);
@@ -159,12 +170,29 @@ static void schedule(void) {
 }
 
 static task_t *scheduler_choose_task(void) {
-  // Currently this is FIFO algorithm.
-  // TODO: make it lottery scheduler.
   if (kv_size(__scheduler.tasks) == 0) {
     return NULL;
   }
-  return kv_A(__scheduler.tasks, 0);
+  task_t **roulette = malloc(sizeof(task_t) * __scheduler.ticket_total);
+  size_t roulette_size = 0;
+  for (size_t i = 0; i < kv_size(__scheduler.tasks); ++i) {
+    task_t *task = kv_A(__scheduler.tasks, i);
+    for (int _ = 0; _ < task->ticket_n; _++) {
+      roulette[roulette_size] = task;
+      roulette_size += 1;
+    }
+  }
+
+  if (roulette_size != (size_t)__scheduler.ticket_total) {
+    fprintf(stderr, "Roulette size differs from the ticket total.\n"
+                    "That this happened means that there is a bug.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  int winner_i = pcg32_boundedrand(roulette_size);
+  task_t *winner = roulette[winner_i];
+  free(roulette);
+  return winner;
 }
 
 static void scheduler_free_current_task(void) {

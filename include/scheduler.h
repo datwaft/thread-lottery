@@ -6,7 +6,7 @@ void scheduler_init(void);
 
 // Call to create a new task and add it to the list in a runnable state.
 // Can be called outside of a task context or within a task context.
-void scheduler_create_task(void (*function)(void *), void *args);
+void scheduler_create_task(void (*function)(void *), void *args, int ticket_n);
 
 // Call to run the scheduler until all tasks are completed.
 void scheduler_run(void);
