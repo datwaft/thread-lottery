@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <setjmp.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -104,6 +105,9 @@ void scheduler_exit_current_task(void) {
   }
   kv_pop(__scheduler.tasks);
 
+  // Remove from the ticket total
+  __scheduler.ticket_total -= current_task->ticket_n;
+
   // Go to the scheduler context.
   siglongjmp(__scheduler.context, SCHEDULER_EXIT_TASK);
 
@@ -179,7 +183,14 @@ static task_t *scheduler_choose_task(void) {
       roulette_size += 1;
     }
   }
-  int winner_i = pcg32_boundedrand(__scheduler.ticket_total);
+
+  if (roulette_size != (size_t)__scheduler.ticket_total) {
+    fprintf(stderr, "Roulette size differs from the ticket total.\n"
+                    "That this happened means that there is a bug.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  int winner_i = pcg32_boundedrand(roulette_size);
   task_t *winner = roulette[winner_i];
   free(roulette);
   return winner;
