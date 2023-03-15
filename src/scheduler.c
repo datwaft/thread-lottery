@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <setjmp.h>
 #include <stdbool.h>
 #include <stddef.h>
