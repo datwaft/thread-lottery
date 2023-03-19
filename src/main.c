@@ -11,13 +11,17 @@ typedef struct args_t {
 
 void tester(args_t *args) {
   size_t n = args->iterations;
+  // red is 31
+  // ...
+  // white is 37
+  int color = (args->name % (37 - 31)) + 31;
   for (size_t i = 1; i <= n; i++) {
     if (i == n) {
       printf("\x1b[9m"); // STRIKETHROUGH
     }
     printf("\x1b[2m" // DIM
            "task "
-           "\x1b[22;%zum" // !DIM & color
+           "\x1b[22;%dm" // !DIM & color
            "%zu"
            "\x1b[39;2m" // !color & DIM
            ": "
@@ -27,9 +31,9 @@ void tester(args_t *args) {
            "/"
            "\x1b[22m" // !DIM
            "%zu"
-           "\x1b[0m" // RESET
+           "\x1b[0m" // DEFAULT
            "\n",
-           31 + args->name, args->name, i, n);
+           color, args->name, i, n);
     scheduler_pause_current_task();
   }
   free(args);
@@ -43,13 +47,14 @@ void create_test_task(size_t name, int iters) {
 }
 
 void on_pause(args_t *args) {
-  printf("\x1b[2m"
+  int color = (args->name % (37 - 31)) + 31;
+  printf("\x1b[2m" // DIM
          "paused task "
-         "\x1b[0;%zum"
+         "\x1b[22;%dm" // !DIM & color
          "%zu"
-         "\x1b[0m"
+         "\x1b[0m" // DEFAULT
          "\n",
-         31 + args->name, args->name);
+         color, args->name);
 }
 
 int main(int argc, char **argv) {
@@ -59,6 +64,9 @@ int main(int argc, char **argv) {
     create_test_task(i, pcg32_boundedrand(10 - 3) + 3);
   }
   scheduler_run();
-  printf("Finished running all tasks!\n");
+  printf("\x1b[1m"
+         "Finished running all tasks!"
+         "\x1b[0m"
+         "\n");
   return EXIT_SUCCESS;
 }
