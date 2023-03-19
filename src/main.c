@@ -56,8 +56,19 @@ void create_test_task(size_t name, int iters) {
   scheduler_create_task((void (*)(void *))tester, args, 5);
 }
 
+void on_pause(args_t *args) {
+  printf("\x1b[2m"
+         "paused task "
+         "\x1b[0;%zum"
+         "%zu"
+         "\x1b[0m"
+         "\n",
+         31 + args->name, args->name);
+}
+
 int main(int argc, char **argv) {
   scheduler_init();
+  scheduler_on_pause((void (*)(void *))on_pause);
   for (size_t i = 0; i < 4; ++i) {
     create_test_task(i, pcg32_boundedrand(10 - 3) + 3);
   }
