@@ -10,40 +10,26 @@ typedef struct args_t {
 } args_t;
 
 void tester(args_t *args) {
-  for (size_t i = 0; i < args->iterations; i++) {
-    if (i + 1 == args->iterations) {
-      printf("\x1b[2;9m"
-             "task "
-             "\x1b[0;%lu;9m"
-             "%zu"
-             "\x1b[0;2;9m"
-             ": "
-             "\x1b[0;9m"
-             "%zu"
-             "\x1b[0;2;9m"
-             "/"
-             "\x1b[0;9m"
-             "%zu"
-             "\x1b[0m"
-             "\n",
-             31 + args->name, args->name, i + 1, args->iterations);
-    } else {
-      printf("\x1b[2m"
-             "task "
-             "\x1b[0;%lum"
-             "%zu"
-             "\x1b[0;2m"
-             ": "
-             "\x1b[0m"
-             "%zu"
-             "\x1b[0;2m"
-             "/"
-             "\x1b[0m"
-             "%zu"
-             "\x1b[0m"
-             "\n",
-             31 + args->name, args->name, i + 1, args->iterations);
+  size_t n = args->iterations;
+  for (size_t i = 1; i <= n; i++) {
+    if (i == n) {
+      printf("\x1b[9m"); // STRIKETHROUGH
     }
+    printf("\x1b[2m" // DIM
+           "task "
+           "\x1b[22;%zum" // !DIM & color
+           "%zu"
+           "\x1b[39;2m" // !color & DIM
+           ": "
+           "\x1b[22m" // !DIM
+           "%zu"
+           "\x1b[2m" // DIM
+           "/"
+           "\x1b[22m" // !DIM
+           "%zu"
+           "\x1b[0m" // RESET
+           "\n",
+           31 + args->name, args->name, i, n);
     scheduler_pause_current_task();
   }
   free(args);
