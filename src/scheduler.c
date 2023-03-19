@@ -50,6 +50,8 @@ struct {
   kvec_t(task_t *) tasks;
   // For lottery scheduling.
   int ticket_total;
+  // Callbacks to call on events
+  void (*on_pause)(void *);
 } __scheduler;
 
 static task_t *scheduler_choose_task(void);
@@ -60,6 +62,10 @@ static void scheduler_free_task_list(void);
 void scheduler_init(void) {
   __scheduler.current_task = NULL;
   kv_init(__scheduler.tasks);
+}
+
+void scheduler_on_pause(void (*callback)(void *)) {
+  __scheduler.on_pause = callback;
 }
 
 void scheduler_create_task(void (*function)(void *), void *args, int ticket_n) {
@@ -118,6 +124,10 @@ void scheduler_exit_current_task(void) {
 
 void scheduler_pause_current_task(void) {
   if (!sigsetjmp(__scheduler.current_task->context, false)) {
+    // Execute the 'on pause' callback.
+    if (__scheduler.on_pause) {
+      __scheduler.on_pause(__scheduler.current_task->args);
+    }
     siglongjmp(__scheduler.context, SCHEDULER_SCHEDULE);
   }
 }
