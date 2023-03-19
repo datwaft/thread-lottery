@@ -5,12 +5,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "deps/kvec.h"
 #include "deps/pcg_basic.h"
 #include "scheduler.h"
 
+typedef struct itimerval timer_t;
 typedef sigjmp_buf context_t;
 
 typedef struct task_t {
@@ -58,6 +60,7 @@ static void schedule(void);
 static void scheduler_free_current_task(void);
 static void scheduler_timer_callback(int signum);
 static void scheduler_free_task_list(void);
+static void scheduler_set_timer(void);
 
 void scheduler_init(void) {
   __scheduler.current_task = NULL;
@@ -130,7 +133,7 @@ void scheduler_exit_current_task(void) {
 }
 
 void scheduler_pause_current_task(void) {
-  if (!sigsetjmp(__scheduler.current_task->context, false)) {
+  if (!sigsetjmp(__scheduler.current_task->context, true)) {
     // Execute the 'on pause' callback.
     if (__scheduler.on_pause) {
       __scheduler.on_pause(__scheduler.current_task->args);
@@ -140,7 +143,7 @@ void scheduler_pause_current_task(void) {
 }
 
 void scheduler_run(void) {
-  switch (sigsetjmp(__scheduler.context, false)) {
+  switch (sigsetjmp(__scheduler.context, true)) {
   case SCHEDULER_EXIT_TASK:
     scheduler_free_current_task();
     // NOTE: intentional passthrough.
@@ -157,6 +160,8 @@ void scheduler_run(void) {
 static void scheduler_timer_callback(int signum) {
   scheduler_pause_current_task();
 }
+
+static void scheduler_set_timer(void) { ualarm(100 * 1000, 0); }
 
 static void schedule(void) {
   task_t *next = scheduler_choose_task();
@@ -175,14 +180,14 @@ static void schedule(void) {
 
     // Run the task function.
     next->status = TASK_RUNNING;
-    alarm(1);
+    scheduler_set_timer();
     next->function(next->args);
 
     // Exit the task.
     scheduler_exit_current_task();
   } else {
     // Go to the current task context.
-    alarm(1);
+    scheduler_set_timer();
     siglongjmp(next->context, true);
   }
 
