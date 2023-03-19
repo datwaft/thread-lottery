@@ -6,3 +6,10 @@ build/
 
 # Personal LSP configuration
 compile_commands.json
+
+# Glade temp
+lottery-scheduler-gui/glade/lottery-scheduler-gui.glade~
+
+# GUI Testing obj
+lottery-scheduler-gui/main
+lottery-scheduler-gui/main.o
