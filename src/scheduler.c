@@ -80,7 +80,7 @@ void scheduler_create_task(void (*function)(void *), void *args, int ticket_n) {
   id += 1;
   task->ticket_n = ticket_n;
   __scheduler.ticket_total += ticket_n;
-  task->stack.size = 16 * 1024; // This is fairly arbitrary.
+  task->stack.size = SCHEDULER_STACK_SIZE;
   task->stack.bottom = malloc(task->stack.size);
   task->stack.top = (int8_t *)task->stack.bottom + task->stack.size;
 

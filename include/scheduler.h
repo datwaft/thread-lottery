@@ -1,6 +1,8 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
+#define SCHEDULER_STACK_SIZE 16 * 1024
+
 // Call once to initialize the scheduler.
 void scheduler_init(void);
 
