@@ -176,14 +176,12 @@ static void schedule(void) {
     // Run the task function.
     next->status = TASK_RUNNING;
     alarm(1);
-    printf("Starting task...\n");
     next->function(next->args);
 
     // Exit the task.
     scheduler_exit_current_task();
   } else {
     // Go to the current task context.
-    printf("Returning to task...\n");
     alarm(1);
     siglongjmp(next->context, true);
   }
