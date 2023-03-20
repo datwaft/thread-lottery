@@ -77,7 +77,7 @@ void on_end(args_t *args) {
 }
 
 int main(int argc, char **argv) {
-  bool expropiative = false;
+  bool expropiative = true;
   size_t thread_n = 5;
   int ticket_n = 5;
   int64_t work_n = 10000000;
