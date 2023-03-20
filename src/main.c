@@ -1,3 +1,6 @@
+#include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -5,63 +8,95 @@
 #include "scheduler.h"
 
 typedef struct args_t {
-  size_t name;
-  size_t iterations;
+  size_t id;
+  // For calculations
+  int64_t i;
+  int64_t n;
+  double_t result;
+  double_t divisor;
+  int8_t sign;
+  // Configuration
+  bool expropiative;
+  double_t work_before_pause;
 } args_t;
 
-void tester(args_t *args) {
-  size_t n = args->iterations;
-  // red is 31
-  // ...
-  // white is 37
-  int color = (args->name % (37 - 31)) + 31;
-  for (size_t i = 1; i <= n; i++) {
-    if (i == n) {
-      printf("\x1b[9m"); // STRIKETHROUGH
+void calculate_pi(args_t *args) {
+  for (; args->i < args->n; args->i += 1) {
+    args->result += args->sign / args->divisor;
+    args->divisor += 2;
+    args->sign *= -1;
+
+    if (!args->expropiative && args->i != 0 &&
+        args->i % (int64_t)(args->n * args->work_before_pause) == 0) {
+      scheduler_pause_current_task();
     }
-    printf("\x1b[2m" // DIM
-           "task "
-           "\x1b[22;%dm" // !DIM & color
-           "%zu"
-           "\x1b[39;2m" // !color & DIM
-           ": "
-           "\x1b[22m" // !DIM
-           "%zu"
-           "\x1b[2m" // DIM
-           "/"
-           "\x1b[22m" // !DIM
-           "%zu"
-           "\x1b[0m" // DEFAULT
-           "\n",
-           color, args->name, i, n);
-    scheduler_pause_current_task();
   }
+  args->result = 4 * args->result;
+
+  int color = (args->id % (37 - 31)) + 31;
+  printf("\x1b[2m"
+         "Finished "
+         "\x1b[22;%dm"
+         "%zu"
+         "\x1b[2;39m"
+         ": with "
+         "\x1b[22m"
+         "%lld"
+         "\x1b[2m"
+         " iterations, the value of PI is "
+         "\x1b[22m"
+         "%.10f"
+         "\x1b[0m"
+         "\n",
+         color, args->id, args->n, args->result);
   free(args);
 }
 
-void create_test_task(size_t name, int iters) {
-  args_t *args = malloc(sizeof(*args));
-  args->name = name;
-  args->iterations = iters;
-  scheduler_create_task((void (*)(void *))tester, args, 5);
-}
-
 void on_pause(args_t *args) {
-  int color = (args->name % (37 - 31)) + 31;
-  printf("\x1b[2m" // DIM
-         "paused task "
-         "\x1b[22;%dm" // !DIM & color
+  int color = (args->id % (37 - 31)) + 31;
+  printf("\x1b[2m"
+         "Paused "
+         "\x1b[22;%dm"
          "%zu"
-         "\x1b[0m" // DEFAULT
+         "\x1b[2;39m"
+         ": current result is "
+         "\x1b[22m"
+         "%.10f"
+         "\x1b[2m"
+         " with "
+         "\x1b[22m"
+         "%.2f%%"
+         "\x1b[2m"
+         " of the work done."
+         "\x1b[0m"
          "\n",
-         color, args->name);
+         color, args->id, 4 * args->result,
+         (args->i / (double_t)args->n) * 100);
 }
 
 int main(int argc, char **argv) {
+  bool expropiative = false;
+  size_t thread_n = 5;
+  int ticket_n = 5;
+  int64_t work_n = 10000000;
+  double_t work_before_pause = 0.05;
+
   scheduler_init();
   scheduler_on_pause((void (*)(void *))on_pause);
-  for (size_t i = 0; i < 4; ++i) {
-    create_test_task(i, pcg32_boundedrand(10 - 3) + 3);
+  for (size_t id = 0; id < thread_n; ++id) {
+    args_t *args = malloc(sizeof(args_t));
+    args->id = id;
+
+    args->i = 0;
+    args->n = work_n * 50;
+    args->result = 0;
+    args->sign = 1;
+    args->divisor = 1;
+
+    args->expropiative = expropiative;
+    args->work_before_pause = work_before_pause;
+
+    scheduler_create_task((void (*)(void *))calculate_pi, args, ticket_n);
   }
   scheduler_run();
   printf("\x1b[1m"
