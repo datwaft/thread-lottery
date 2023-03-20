@@ -126,7 +126,7 @@ void scheduler_exit_current_task(void) {
 }
 
 void scheduler_pause_current_task(void) {
-  if (!sigsetjmp(__scheduler.current_task->context, false)) {
+  if (!sigsetjmp(__scheduler.current_task->context, true)) {
     // Execute the 'on pause' callback.
     if (__scheduler.on_pause) {
       __scheduler.on_pause(__scheduler.current_task->args);
@@ -136,7 +136,7 @@ void scheduler_pause_current_task(void) {
 }
 
 void scheduler_run(void) {
-  switch (sigsetjmp(__scheduler.context, false)) {
+  switch (sigsetjmp(__scheduler.context, true)) {
   case SCHEDULER_EXIT_TASK:
     scheduler_free_current_task();
     // NOTE: intentional passthrough.
