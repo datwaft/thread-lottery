@@ -32,24 +32,6 @@ void calculate_pi(args_t *args) {
     }
   }
   args->result = 4 * args->result;
-
-  int color = (args->id % (37 - 31)) + 31;
-  printf("\x1b[2m"
-         "Finished "
-         "\x1b[22;%dm"
-         "%zu"
-         "\x1b[2;39m"
-         ": with "
-         "\x1b[22m"
-         "%lld"
-         "\x1b[2m"
-         " iterations, the value of PI is "
-         "\x1b[22m"
-         "%.10f"
-         "\x1b[0m"
-         "\n",
-         color, args->id, args->n, args->result);
-  free(args);
 }
 
 void on_pause(args_t *args) {
@@ -74,6 +56,25 @@ void on_pause(args_t *args) {
          (args->i / (double_t)args->n) * 100);
 }
 
+void on_end(args_t *args) {
+  int color = (args->id % (37 - 31)) + 31;
+  printf("\x1b[2m"
+         "Finished "
+         "\x1b[22;%dm"
+         "%zu"
+         "\x1b[2;39m"
+         ": with "
+         "\x1b[22m"
+         "%lld"
+         "\x1b[2m"
+         " iterations, the value of PI is "
+         "\x1b[22m"
+         "%.10f"
+         "\x1b[0m"
+         "\n",
+         color, args->id, args->n, args->result);
+}
+
 int main(int argc, char **argv) {
   bool expropiative = false;
   size_t thread_n = 5;
@@ -83,6 +84,7 @@ int main(int argc, char **argv) {
 
   scheduler_init();
   scheduler_on_pause((void (*)(void *))on_pause);
+  scheduler_on_end((void (*)(void *))on_end);
   for (size_t id = 0; id < thread_n; ++id) {
     args_t *args = malloc(sizeof(args_t));
     args->id = id;

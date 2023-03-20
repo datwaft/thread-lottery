@@ -48,6 +48,7 @@ struct {
   int ticket_total;
   // Callbacks to call on events
   void (*on_pause)(void *);
+  void (*on_end)(void *);
 } __scheduler;
 
 static task_t *scheduler_choose_task(void);
@@ -62,6 +63,10 @@ void scheduler_init(void) {
 
 void scheduler_on_pause(void (*callback)(void *)) {
   __scheduler.on_pause = callback;
+}
+
+void scheduler_on_end(void (*callback)(void *)) {
+  __scheduler.on_end = callback;
 }
 
 void scheduler_create_task(void (*function)(void *), void *args, int ticket_n) {
@@ -82,6 +87,11 @@ void scheduler_create_task(void (*function)(void *), void *args, int ticket_n) {
 
 void scheduler_exit_current_task(void) {
   task_t *current_task = __scheduler.current_task;
+
+  // Execute 'on_end' callback
+  if (__scheduler.on_end) {
+    __scheduler.on_end(__scheduler.current_task->args);
+  }
 
   // Find current task index in array
   int index = -1;
@@ -201,6 +211,7 @@ static task_t *scheduler_choose_task(void) {
 static void scheduler_free_current_task(void) {
   task_t *task = __scheduler.current_task;
   __scheduler.current_task = NULL;
+  free(task->args);
   free(task);
 }
 
