@@ -7,7 +7,7 @@
 #include "deps/pcg_basic.h"
 #include "scheduler.h"
 
-typedef struct args_t {
+typedef struct args_st {
   size_t id;
   // For calculations
   int64_t i;
