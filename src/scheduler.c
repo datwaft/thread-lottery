@@ -12,7 +12,6 @@
 #include "deps/pcg_basic.h"
 #include "scheduler.h"
 
-typedef struct itimerval timer_t;
 typedef sigjmp_buf context_t;
 
 typedef struct task_t {
