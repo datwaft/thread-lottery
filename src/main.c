@@ -31,6 +31,32 @@ void calculate_pi(args_t *args, scheduler_config_t config) {
   args->result = 4 * args->result;
 }
 
+void on_start(size_t id, args_t *args) {
+  int color = (id % (37 - 31)) + 31;
+  printf("\x1b[2m"
+         "Started "
+         "\x1b[22;%dm"
+         "%zu"
+         "\x1b[2m"
+         "."
+         "\x1b[0m"
+         "\n",
+         color, id);
+}
+
+void on_continue(size_t id, args_t *args) {
+  int color = (id % (37 - 31)) + 31;
+  printf("\x1b[2m"
+         "Continued with "
+         "\x1b[22;%dm"
+         "%zu"
+         "\x1b[2m"
+         "."
+         "\x1b[0m"
+         "\n",
+         color, id);
+}
+
 void on_pause(size_t id, args_t *args) {
   int color = (id % (37 - 31)) + 31;
   printf("\x1b[2m"
@@ -81,14 +107,14 @@ int main(int argc, char **argv) {
   for (size_t i = 0; i < thread_n; i++) {
     work_n[i] = pow(10, i + 4);
   }
-  bool preemptive = true;
-  double_t percentage_of_work_before_pause = 0.05;
 
-  scheduler_config_t config = {.preemptive = preemptive,
-                               .percentage_of_work_before_pause =
-                                   percentage_of_work_before_pause};
+  scheduler_config_t config = {.preemptive = true,
+                               .percentage_of_work_before_pause = 0.05,
+                               .quantum_msec = 100};
 
   scheduler_init(config);
+  scheduler_on_start((scheduler_cf_addr_t)on_start);
+  scheduler_on_continue((scheduler_cf_addr_t)on_continue);
   scheduler_on_pause((scheduler_cf_addr_t)on_pause);
   scheduler_on_end((scheduler_cf_addr_t)on_end);
   for (size_t i = 0; i < thread_n; ++i) {
