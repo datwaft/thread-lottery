@@ -61,7 +61,7 @@ void on_end(size_t id, args_t *args) {
          "\x1b[2;39m"
          ": with "
          "\x1b[22m"
-         "%lld"
+         "%ld"
          "\x1b[2m"
          " iterations, the value of PI is "
          "\x1b[22m"
