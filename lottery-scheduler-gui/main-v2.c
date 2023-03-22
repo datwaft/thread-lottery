@@ -9,11 +9,12 @@ typedef struct gui_t {
   float progress;
   GtkWidget *window_main;
   GtkWidget *button_execute;
-  GtkWidget *entry_thread_num;
+  GtkWidget *spin_thread_num;
+  GtkWidget *spin_unit;
   GtkWidget *cb_operation_mode;
   GtkWidget *label_quantum_or_percentage;
   GtkWidget *entry_quantum_or_percentage;
-  GtkWidget *label_unit_quantum_or_percentage;
+  GtkWidget *label_unit;
   GtkWidget *generic_progress_bar;
 } gui_t;
 
@@ -44,21 +45,23 @@ static void activate(GtkApplication *app, gui_t gui, gpointer user_data) {
   gui.button_execute =
       GTK_WIDGET(gtk_builder_get_object(builder, "button_execute"));
 
-  gui.entry_thread_num =
-      GTK_WIDGET(gtk_builder_get_object(builder, "entry_thread_num"));
+  gui.spin_thread_num =
+      GTK_WIDGET(gtk_builder_get_object(builder, "spin_thread_num"));
+
+  gui.spin_unit = GTK_WIDGET(gtk_builder_get_object(builder, "spin_unit"));
 
   gui.cb_operation_mode =
       GTK_WIDGET(gtk_builder_get_object(builder, "cb_operation_mode"));
 
-  gui.label_quantum_or_percentage = GTK_WIDGET(
-      gtk_builder_get_object(builder, "label_quantum_or_percentage"));
+  gui.label_unit = GTK_WIDGET(gtk_builder_get_object(builder, "label_unit"));
 
   /* Connects */
   gtk_builder_connect_signals(builder, NULL);
 
   g_signal_connect(window_main, "destroy", G_CALLBACK(destroy), &gui);
 
-
+  g_signal_connect(gui.button_execute, "clicked",
+                   G_CALLBACK(on_button_execute_clicked), &gui);
 
   g_object_unref(builder);
   gtk_widget_show(window_main);
@@ -69,35 +72,37 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
   gui_t *gui;
   gui = (gui_t *)data;
   gui->progress += 0.1;
-  gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(gui->generic_progress_bar),
-                                gui->progress);
+
+  gint val = gtk_spin_button_get_value(GTK_SPIN_BUTTON(gui->spin_thread_num));
 
   // gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(gui->generic_progress_bar),
   //                               i);
+
+  g_print("You chose %i\n", val);
 }
 
 void on_changed(GtkComboBox *widget, gpointer data) {
   gui_t *gui;
   gui = (gui_t *)data;
 
-  switch (gtk_combo_box_get_active(GTK_COMBO_BOX(gui->cb_operation_mode))) {
-  case 0:
-    g_print("You chose %s\n", "0");
-    gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
-                       "Tamaño Quantum");
-    gtk_label_set_text(GTK_LABEL(gui->label_unit_quantum_or_percentage), "ms");
-    break;
-  case 1:
-    g_print("You chose %s\n", "1");
-    g_print("You chose %s\n", "0");
-    gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
-                       "Trabajo Mínimo");
-    gtk_label_set_text(GTK_LABEL(gui->label_unit_quantum_or_percentage), "\%");
-    break;
-  default:
-    g_print("You chose %s\n", "other");
-    break;
-  }
+  // switch (gtk_combo_box_get_active(GTK_COMBO_BOX(gui->cb_operation_mode))) {
+  // case 0:
+  //   g_print("You chose %s\n", "0");
+  //   gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
+  //                      "Tamaño Quantum");
+  //   gtk_label_set_text(GTK_LABEL(gui->label_unit_quantum_or_percentage),
+  //   "ms"); break;
+  // case 1:
+  //   g_print("You chose %s\n", "1");
+  //   g_print("You chose %s\n", "0");
+  //   gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
+  //                      "Trabajo Mínimo");
+  //   gtk_label_set_text(GTK_LABEL(gui->label_unit_quantum_or_percentage),
+  //   "\%"); break;
+  // default:
+  //   g_print("You chose %s\n", "other");
+  //   break;
+  // }
 }
 
 static void destroy(GtkWidget *widget, gpointer data) { gtk_main_quit(); }
