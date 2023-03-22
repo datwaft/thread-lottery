@@ -57,7 +57,7 @@ CFLAGS += -Wall -Wextra -Wpedantic \
 					-Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
 					-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
 CFLAGS += -Wno-language-extension-token
-CPPFLAGS += -I$(HEADER_DIR) -MMD -MP
+CPPFLAGS += -I$(HEADER_DIR) -MMD -MP -g
 LDLIBS += -lm
 
 # =================
