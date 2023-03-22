@@ -1,7 +1,7 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
 
-#define GLADE_FILE "glade/lottery-scheduler-gui.glade"
+#define GLADE_FILE "glade/lottery-scheduler-gui-v2.glade"
 
 int valor = 0;
 
@@ -53,22 +53,12 @@ static void activate(GtkApplication *app, gui_t gui, gpointer user_data) {
   gui.label_quantum_or_percentage = GTK_WIDGET(
       gtk_builder_get_object(builder, "label_quantum_or_percentage"));
 
-  gui.label_unit_quantum_or_percentage = GTK_WIDGET(
-      gtk_builder_get_object(builder, "label_unit_quantum_or_percentage"));
-
-  gui.generic_progress_bar =
-      GTK_WIDGET(gtk_builder_get_object(builder, "generic_progress_bar"));
-
   /* Connects */
   gtk_builder_connect_signals(builder, NULL);
 
   g_signal_connect(window_main, "destroy", G_CALLBACK(destroy), &gui);
 
-  g_signal_connect(gui.button_execute, "clicked",
-                   G_CALLBACK(on_button_execute_clicked), &gui);
 
-  g_signal_connect(gui.cb_operation_mode, "changed", G_CALLBACK(on_changed),
-                   &gui);
 
   g_object_unref(builder);
   gtk_widget_show(window_main);

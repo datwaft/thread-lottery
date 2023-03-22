@@ -1,4 +1,4 @@
-name:=main
+name:=main-v2
 
 all: clean build exec
 
