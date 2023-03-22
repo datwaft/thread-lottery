@@ -171,7 +171,6 @@ static void schedule(void) {
 
     // Assign new stack.
     asm volatile("mov %0, %%rsp" ::"rm"(next->stack + SCHEDULER_STACK_SIZE));
-
     // Run the task function.
     next->status = TASK_RUNNING;
     next->f_addr(next->f_arg, scheduler.config);
