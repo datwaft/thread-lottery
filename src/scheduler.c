@@ -53,8 +53,8 @@ static struct {
 static task_t *scheduler_choose_task(void);
 static void schedule(void);
 static void scheduler_free_current_task(void);
-static void scheduler_timer_callback(int signum);
 static void scheduler_free_task_list(void);
+static void scheduler_timer_callback(int signum);
 static void scheduler_set_timer(void);
 
 void scheduler_init(scheduler_config_t config) {
@@ -162,7 +162,9 @@ static void scheduler_timer_callback(int signum) {
   scheduler_pause_current_task();
 }
 
-static void scheduler_set_timer(void) { ualarm(100 * 1000, 0); }
+static void scheduler_set_timer(void) {
+  ualarm(scheduler.config.quantum_msec * 1000, 0);
+}
 
 static void schedule(void) {
   task_t *next = scheduler_choose_task();
