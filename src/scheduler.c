@@ -14,22 +14,19 @@
 
 typedef sigjmp_buf context_t;
 
-typedef struct task_t {
+typedef struct task_st {
   enum {
     TASK_CREATED,
     TASK_RUNNING,
   } status;
+  context_t context;
 
   size_t id;
 
-  // For lottery scheduling.
-  int ticket_n;
+  uint64_t ticket_n;
 
-  // This is where to jump back in order to resume the execution.
-  context_t context;
-
-  void (*function)(void *);
-  void *args;
+  scheduler_f_addr_t f_addr;
+  void *f_arg;
 
   int8_t stack[SCHEDULER_STACK_SIZE];
 } task_t;
@@ -40,19 +37,16 @@ enum {
   SCHEDULER_EXIT_TASK,
 };
 
-struct {
-  // Where to jump back to perform scheduling.
+static struct {
   context_t context;
-  // Current task.
+  scheduler_config_t config;
+
   task_t *current_task;
-  // List of tasks.
   kvec_t(task_t *) tasks;
-  // For lottery scheduling.
-  int ticket_total;
-  // Callbacks to call on events
-  void (*on_pause)(void *);
-  void (*on_end)(void *);
-} __scheduler;
+
+  scheduler_cf_addr_t on_pause;
+  scheduler_cf_addr_t on_end;
+} scheduler;
 
 static task_t *scheduler_choose_task(void);
 static void schedule(void);
@@ -61,52 +55,52 @@ static void scheduler_timer_callback(int signum);
 static void scheduler_free_task_list(void);
 static void scheduler_set_timer(void);
 
-void scheduler_init(void) {
-  __scheduler.current_task = NULL;
-  kv_init(__scheduler.tasks);
+void scheduler_init(scheduler_config_t config) {
+  scheduler.config = config;
+  scheduler.current_task = NULL;
+  kv_init(scheduler.tasks);
   signal(SIGALRM, scheduler_timer_callback);
 }
 
-void scheduler_on_pause(void (*callback)(void *)) {
-  __scheduler.on_pause = callback;
+void scheduler_on_pause(scheduler_cf_addr_t cf_addr) {
+  scheduler.on_pause = cf_addr;
 }
 
-void scheduler_on_end(void (*callback)(void *)) {
-  __scheduler.on_end = callback;
+void scheduler_on_end(scheduler_cf_addr_t cf_addr) {
+  scheduler.on_end = cf_addr;
 }
 
-void scheduler_create_task(void (*function)(void *), void *args, int ticket_n) {
-  // This value is saved between executions of this function.
+void scheduler_create_task(scheduler_f_addr_t f_addr, void *f_arg,
+                           uint64_t ticket_n) {
   static size_t id = 1;
 
   task_t *task = malloc(sizeof(*task));
   task->status = TASK_CREATED;
-  task->function = function;
-  task->args = args;
-  task->id = id;
-  id += 1;
+  task->id = id++;
   task->ticket_n = ticket_n;
-  __scheduler.ticket_total += ticket_n;
+  task->f_addr = f_addr;
+  task->f_arg = f_arg;
 
-  kv_push(task_t *, __scheduler.tasks, task);
+  kv_push(task_t *, scheduler.tasks, task);
 }
 
 void scheduler_exit_current_task(void) {
-  task_t *current_task = __scheduler.current_task;
+  task_t *current_task = scheduler.current_task;
 
   // Execute 'on_end' callback
-  if (__scheduler.on_end) {
-    __scheduler.on_end(__scheduler.current_task->args);
+  if (scheduler.on_end) {
+    scheduler.on_end(current_task->id, current_task->f_arg);
   }
 
   // Find current task index in array
-  int index = -1;
-  for (size_t i = 0; i < kv_size(__scheduler.tasks); ++i) {
-    if (kv_A(__scheduler.tasks, i) == current_task) {
+  int64_t index = -1;
+  for (size_t i = 0; i < kv_size(scheduler.tasks); ++i) {
+    if (kv_A(scheduler.tasks, i) == current_task) {
       index = i;
       break;
     }
   }
+
   if (index == -1) {
     fprintf(stderr, "The current task wasn't found in the task array.\n"
                     "This should never happen.\n");
@@ -114,16 +108,13 @@ void scheduler_exit_current_task(void) {
   }
 
   // Shift every task after the index to the left and remove the last element.
-  for (size_t i = index; i < kv_size(__scheduler.tasks); ++i) {
-    kv_A(__scheduler.tasks, i) = kv_A(__scheduler.tasks, i + 1);
+  for (size_t i = index; i < kv_size(scheduler.tasks); ++i) {
+    kv_A(scheduler.tasks, i) = kv_A(scheduler.tasks, i + 1);
   }
-  kv_pop(__scheduler.tasks);
-
-  // Remove from the ticket total
-  __scheduler.ticket_total -= current_task->ticket_n;
+  kv_pop(scheduler.tasks);
 
   // Go to the scheduler context.
-  siglongjmp(__scheduler.context, SCHEDULER_EXIT_TASK);
+  siglongjmp(scheduler.context, SCHEDULER_EXIT_TASK);
 
   // NOTE: this function never returns.
   fprintf(stderr, "The function scheduler_exit_current_task() has returned.\n"
@@ -132,17 +123,18 @@ void scheduler_exit_current_task(void) {
 }
 
 void scheduler_pause_current_task(void) {
-  if (!sigsetjmp(__scheduler.current_task->context, true)) {
+  if (!sigsetjmp(scheduler.current_task->context, true)) {
     // Execute the 'on pause' callback.
-    if (__scheduler.on_pause) {
-      __scheduler.on_pause(__scheduler.current_task->args);
+    if (scheduler.on_pause) {
+      scheduler.on_pause(scheduler.current_task->id,
+                         scheduler.current_task->f_arg);
     }
-    siglongjmp(__scheduler.context, SCHEDULER_SCHEDULE);
+    siglongjmp(scheduler.context, SCHEDULER_SCHEDULE);
   }
 }
 
 void scheduler_run(void) {
-  switch (sigsetjmp(__scheduler.context, true)) {
+  switch (sigsetjmp(scheduler.context, true)) {
   case SCHEDULER_EXIT_TASK:
     scheduler_free_current_task();
     // NOTE: intentional passthrough.
@@ -171,7 +163,7 @@ static void schedule(void) {
     return;
   }
 
-  __scheduler.current_task = next;
+  scheduler.current_task = next;
 
   if (next->status == TASK_CREATED) {
     // Assign new stack.
@@ -180,7 +172,7 @@ static void schedule(void) {
     // Run the task function.
     next->status = TASK_RUNNING;
     scheduler_set_timer();
-    next->function(next->args);
+    next->f_addr(next->f_arg, scheduler.config);
 
     // Exit the task.
     scheduler_exit_current_task();
@@ -197,39 +189,42 @@ static void schedule(void) {
 }
 
 static task_t *scheduler_choose_task(void) {
-  if (kv_size(__scheduler.tasks) == 0) {
+  if (kv_size(scheduler.tasks) == 0) {
     return NULL;
   }
-  task_t **roulette = malloc(sizeof(task_t) * __scheduler.ticket_total);
+
+  // Calculate total number of tickets
+  uint64_t ticket_total = 0;
+  for (size_t i = 0; i < kv_size(scheduler.tasks); ++i) {
+    ticket_total += kv_A(scheduler.tasks, i)->ticket_n;
+  }
+
+  // Create roulette
+  task_t *roulette[ticket_total];
   size_t roulette_size = 0;
-  for (size_t i = 0; i < kv_size(__scheduler.tasks); ++i) {
-    task_t *task = kv_A(__scheduler.tasks, i);
-    for (int _ = 0; _ < task->ticket_n; _++) {
-      roulette[roulette_size] = task;
-      roulette_size += 1;
+  for (size_t i = 0; i < kv_size(scheduler.tasks); ++i) {
+    task_t *task = kv_A(scheduler.tasks, i);
+    for (uint64_t _ = 0; _ < task->ticket_n; _++) {
+      roulette[roulette_size++] = task;
     }
   }
 
-  if (roulette_size != (size_t)__scheduler.ticket_total) {
+  if (roulette_size != ticket_total) {
     fprintf(stderr, "Roulette size differs from the ticket total.\n"
                     "That this happened means that there is a bug.\n");
     exit(EXIT_FAILURE);
   }
 
-  int winner_i = pcg32_boundedrand(roulette_size);
-  task_t *winner = roulette[winner_i];
-  free(roulette);
-  return winner;
+  return roulette[pcg32_boundedrand(roulette_size)];
 }
 
 static void scheduler_free_current_task(void) {
-  task_t *task = __scheduler.current_task;
-  __scheduler.current_task = NULL;
-  free(task->args);
+  task_t *task = scheduler.current_task;
+  scheduler.current_task = NULL;
   free(task);
 }
 
-static void scheduler_free_task_list(void) { kv_destroy(__scheduler.tasks); }
+static void scheduler_free_task_list(void) { kv_destroy(scheduler.tasks); }
 
 // The code here was inspired by:
 // https://brennan.io/2020/05/24/userspace-cooperative-multitasking/
