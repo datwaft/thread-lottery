@@ -175,6 +175,8 @@ static void schedule(void) {
 
   scheduler.current_task = next;
 
+  scheduler_set_timer();
+
   if (next->status == TASK_CREATED) {
     // Execute 'on_start' callback
     if (scheduler.on_start) {
@@ -185,7 +187,6 @@ static void schedule(void) {
     asm volatile("mov %0, %%rsp" ::"rm"(next->stack + SCHEDULER_STACK_SIZE));
     // Run the task function.
     next->status = TASK_RUNNING;
-    scheduler_set_timer();
     next->f_addr(next->f_arg, scheduler.config);
 
     // Exit the task.
@@ -196,7 +197,6 @@ static void schedule(void) {
       scheduler.on_continue(next->id, next->f_arg);
     }
     // Go to the current task context.
-    scheduler_set_timer();
     siglongjmp(next->context, true);
   }
 
