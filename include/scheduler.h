@@ -12,6 +12,7 @@
 typedef struct scheduler_config_st {
   bool preemptive;
   double_t percentage_of_work_before_pause;
+  uint64_t quantum_msec;
 } scheduler_config_t;
 
 // Scheduler function address type.

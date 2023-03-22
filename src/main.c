@@ -80,12 +80,10 @@ int main(int argc, char **argv) {
   for (size_t i = 0; i < thread_n; i++) {
     work_n[i] = pow(10, i + 4);
   }
-  bool preemptive = false;
-  double_t percentage_of_work_before_pause = 0.05;
 
-  scheduler_config_t config = {.preemptive = preemptive,
-                               .percentage_of_work_before_pause =
-                                   percentage_of_work_before_pause};
+  scheduler_config_t config = {.preemptive = false,
+                               .percentage_of_work_before_pause = 0.05,
+                               .quantum_msec = 100};
 
   scheduler_init(config);
   scheduler_on_pause((scheduler_cf_addr_t)on_pause);
