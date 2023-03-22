@@ -24,6 +24,12 @@ typedef void (*scheduler_cf_addr_t)(size_t id, void const *f_arg);
 // Call once to initialize the scheduler.
 void scheduler_init(scheduler_config_t config);
 
+// Register an 'on start' callback.
+void scheduler_on_start(scheduler_cf_addr_t cf_addr);
+
+// Register an 'on continue' callback.
+void scheduler_on_continue(scheduler_cf_addr_t cf_addr);
+
 // Register an 'on pause' callback.
 void scheduler_on_pause(scheduler_cf_addr_t cf_addr);
 

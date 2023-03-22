@@ -41,6 +41,8 @@ static struct {
   task_t *current_task;
   kvec_t(task_t *) tasks;
 
+  scheduler_cf_addr_t on_start;
+  scheduler_cf_addr_t on_continue;
   scheduler_cf_addr_t on_pause;
   scheduler_cf_addr_t on_end;
 } scheduler;
@@ -54,6 +56,14 @@ void scheduler_init(scheduler_config_t config) {
   scheduler.config = config;
   scheduler.current_task = NULL;
   kv_init(scheduler.tasks);
+}
+
+void scheduler_on_start(scheduler_cf_addr_t cf_addr) {
+  scheduler.on_start = cf_addr;
+}
+
+void scheduler_on_continue(scheduler_cf_addr_t cf_addr) {
+  scheduler.on_continue = cf_addr;
 }
 
 void scheduler_on_pause(scheduler_cf_addr_t cf_addr) {
@@ -154,6 +164,11 @@ static void schedule(void) {
   scheduler.current_task = next;
 
   if (next->status == TASK_CREATED) {
+    // Execute 'on_start' callback
+    if (scheduler.on_start) {
+      scheduler.on_start(next->id, next->f_arg);
+    }
+
     // Assign new stack.
     asm volatile("mov %0, %%rsp" ::"rm"(next->stack + SCHEDULER_STACK_SIZE));
 
@@ -164,6 +179,10 @@ static void schedule(void) {
     // Exit the task.
     scheduler_exit_current_task();
   } else {
+    // Execute 'on_continue' callback
+    if (scheduler.on_continue) {
+      scheduler.on_continue(next->id, next->f_arg);
+    }
     // Go to the current task context.
     siglongjmp(next->context, true);
   }
