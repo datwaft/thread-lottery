@@ -86,7 +86,7 @@ void on_end(size_t id, args_t *args) {
          "\x1b[2;39m"
          ": with "
          "\x1b[22m"
-         "%lld"
+         "%ld"
          "\x1b[2m"
          " iterations, the value of PI is "
          "\x1b[22m"
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
   }
   int64_t work_n[thread_n];
   for (size_t i = 0; i < thread_n; i++) {
-    work_n[i] = pow(10, i + 4);
+    work_n[i] = pow(10, i + 3);
   }
 
   scheduler_config_t config = {.preemptive = false,
