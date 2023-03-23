@@ -177,7 +177,9 @@ static void schedule(void) {
 
   scheduler.current_task = next;
 
-  scheduler_set_timer();
+  if (scheduler.config.preemptive) {
+    scheduler_set_timer();
+  }
 
   if (next->status == TASK_CREATED) {
     // Execute 'on_start' callback
