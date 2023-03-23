@@ -16,7 +16,7 @@ typedef struct gui_t {
   GtkWidget *entry_quantum_or_percentage;
   GtkWidget *label_unit;
   GtkWidget *generic_progress_bar;
-  GtkWidget *box_thread_config;
+  GtkWidget *box_thread_config, *view_thread_config;
 
 } gui_t;
 
@@ -57,33 +57,27 @@ static void activate(GtkApplication *app, gui_t gui, gpointer user_data) {
 
   gui.label_unit = GTK_WIDGET(gtk_builder_get_object(builder, "label_unit"));
 
+  gui.view_thread_config =
+      GTK_WIDGET(gtk_builder_get_object(builder, "view_thread_config"));
+
   gui.box_thread_config =
       GTK_WIDGET(gtk_builder_get_object(builder, "box_thread_config"));
 
-  GtkWidget *label = gtk_label_new_with_mnemonic("_Hello");
+  int min_ticket = 0;
+  int max_ticket = 1000;
 
-  // gtk_box_set_child_packing(gui.box_thread_config, label, TRUE, TRUE, 0, );
-
-  // for (int i = 0; i < 100; i++) {
-  //   GtkWidget *button = gtk_button_new();
-  //   button = gtk_button_new_with_label("SOY UN BOTON");
-  //   gtk_box_pack_start(GTK_BOX(gui.box_thread_config), button, FALSE, FALSE,
-  //   0); gtk_widget_show(button);
-  // }
-
-  int min_ticket = 5;
-  int max_ticket = 100;
-
-  int min_work = 200;
+  int min_work = 0;
   int max_work = 1000;
 
-  int threads_num = 100;
+  int default_ticket = 5;
+  int default_work = 200;
+
+  int threads_num = 3;
 
   for (int i = 0; i < threads_num; i++) {
     // create one grid_row per row, 3 columns
     GtkWidget *grid_row;
     grid_row = gtk_grid_new();
-
 
     char str_thread_number[5];
     sprintf(str_thread_number, "%d", i);
@@ -92,10 +86,12 @@ static void activate(GtkApplication *app, gui_t gui, gpointer user_data) {
     label_thread = gtk_label_new(str_thread_number);
 
     GtkAdjustment *adjustment_ticket;
-    adjustment_ticket = gtk_adjustment_new(min_ticket, min_ticket, max_ticket, 1.0, 5.0, 0.0);
+    adjustment_ticket = gtk_adjustment_new(default_ticket, min_ticket,
+                                           max_ticket, 1.0, 5.0, 0.0);
 
     GtkAdjustment *adjustment_work;
-    adjustment_work = gtk_adjustment_new(min_work, min_work, max_work, 1.0, 5.0, 0.0);
+    adjustment_work =
+        gtk_adjustment_new(default_work, min_work, max_work, 1.0, 5.0, 0.0);
 
     GtkWidget *sbtn_ticket;
     sbtn_ticket = gtk_spin_button_new(adjustment_ticket, 1.0, 0);
@@ -111,11 +107,11 @@ static void activate(GtkApplication *app, gui_t gui, gpointer user_data) {
     gtk_grid_attach(GTK_GRID(grid_row), sbtn_work, 2, 0, 1, 1);
     gtk_widget_show(grid_row);
 
-
     gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
     gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
 
-    gtk_box_pack_start(GTK_BOX(gui.box_thread_config), grid_row, FALSE, FALSE, 3);
+    gtk_box_pack_start(GTK_BOX(gui.box_thread_config), grid_row, FALSE, FALSE,
+                       3);
 
     gtk_widget_show(sbtn_ticket);
     gtk_widget_show(sbtn_work);
@@ -146,6 +142,24 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
   //                               i);
 
   g_print("You chose %i\n", val);
+
+  GList *children =
+      gtk_container_get_children(GTK_CONTAINER(gui->box_thread_config));
+
+  while (children) {
+    // we can start creating task here 
+    gint ticket_column_value = gtk_spin_button_get_value(
+        GTK_SPIN_BUTTON(gtk_grid_get_child_at(GTK_GRID(children->data), 1, 0)));
+
+    gint work_column_value = gtk_spin_button_get_value(
+        GTK_SPIN_BUTTON(gtk_grid_get_child_at(GTK_GRID(children->data), 2, 0)));
+
+    g_print("%i - %i\n", ticket_column_value, work_column_value);
+
+    children = children->next;
+  }
+  
+
 }
 
 void on_changed(GtkComboBox *widget, gpointer data) {
