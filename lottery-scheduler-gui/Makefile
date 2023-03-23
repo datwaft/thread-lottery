@@ -1,4 +1,5 @@
 name:=main-v2
+# name:=example
 
 all: clean build exec
 

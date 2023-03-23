@@ -16,6 +16,8 @@ typedef struct gui_t {
   GtkWidget *entry_quantum_or_percentage;
   GtkWidget *label_unit;
   GtkWidget *generic_progress_bar;
+  GtkWidget *box_thread_config;
+
 } gui_t;
 
 static void activate(GtkApplication *app, gui_t gui, gpointer user_data);
@@ -54,6 +56,71 @@ static void activate(GtkApplication *app, gui_t gui, gpointer user_data) {
       GTK_WIDGET(gtk_builder_get_object(builder, "cb_operation_mode"));
 
   gui.label_unit = GTK_WIDGET(gtk_builder_get_object(builder, "label_unit"));
+
+  gui.box_thread_config =
+      GTK_WIDGET(gtk_builder_get_object(builder, "box_thread_config"));
+
+  GtkWidget *label = gtk_label_new_with_mnemonic("_Hello");
+
+  // gtk_box_set_child_packing(gui.box_thread_config, label, TRUE, TRUE, 0, );
+
+  // for (int i = 0; i < 100; i++) {
+  //   GtkWidget *button = gtk_button_new();
+  //   button = gtk_button_new_with_label("SOY UN BOTON");
+  //   gtk_box_pack_start(GTK_BOX(gui.box_thread_config), button, FALSE, FALSE,
+  //   0); gtk_widget_show(button);
+  // }
+
+  int min_ticket = 5;
+  int max_ticket = 100;
+
+  int min_work = 200;
+  int max_work = 1000;
+
+  int threads_num = 100;
+
+  for (int i = 0; i < threads_num; i++) {
+    // create one grid_row per row, 3 columns
+    GtkWidget *grid_row;
+    grid_row = gtk_grid_new();
+
+
+    char str_thread_number[5];
+    sprintf(str_thread_number, "%d", i);
+
+    GtkWidget *label_thread;
+    label_thread = gtk_label_new(str_thread_number);
+
+    GtkAdjustment *adjustment_ticket;
+    adjustment_ticket = gtk_adjustment_new(min_ticket, min_ticket, max_ticket, 1.0, 5.0, 0.0);
+
+    GtkAdjustment *adjustment_work;
+    adjustment_work = gtk_adjustment_new(min_work, min_work, max_work, 1.0, 5.0, 0.0);
+
+    GtkWidget *sbtn_ticket;
+    sbtn_ticket = gtk_spin_button_new(adjustment_ticket, 1.0, 0);
+    gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(sbtn_ticket), TRUE);
+
+    GtkWidget *sbtn_work;
+    sbtn_work = gtk_spin_button_new(adjustment_work, 1.0, 0);
+    gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(sbtn_work), TRUE);
+
+    // attach components to grid_row
+    gtk_grid_attach(GTK_GRID(grid_row), label_thread, 0, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid_row), sbtn_ticket, 1, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid_row), sbtn_work, 2, 0, 1, 1);
+    gtk_widget_show(grid_row);
+
+
+    gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
+    gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
+
+    gtk_box_pack_start(GTK_BOX(gui.box_thread_config), grid_row, FALSE, FALSE, 3);
+
+    gtk_widget_show(sbtn_ticket);
+    gtk_widget_show(sbtn_work);
+    gtk_widget_show(label_thread);
+  }
 
   /* Connects */
   gtk_builder_connect_signals(builder, NULL);
