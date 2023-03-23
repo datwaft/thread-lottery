@@ -1,9 +1,12 @@
 #include <setjmp.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include "deps/kvec.h"
 #include "deps/pcg_basic.h"
@@ -51,11 +54,14 @@ static task_t *scheduler_choose_task(void);
 static void schedule(void);
 static void scheduler_free_current_task(void);
 static void scheduler_free_task_list(void);
+static void scheduler_timer_callback(int signum);
+static void scheduler_set_timer(void);
 
 void scheduler_init(scheduler_config_t config) {
   scheduler.config = config;
   scheduler.current_task = NULL;
   kv_init(scheduler.tasks);
+  signal(SIGALRM, scheduler_timer_callback);
 }
 
 void scheduler_on_start(scheduler_cf_addr_t cf_addr) {
@@ -152,6 +158,14 @@ void scheduler_run(void) {
   }
 }
 
+static void scheduler_timer_callback(int signum) {
+  scheduler_pause_current_task();
+}
+
+static void scheduler_set_timer(void) {
+  ualarm(scheduler.config.quantum_msec * 1000, 0);
+}
+
 static void schedule(void) {
   task_t *next = scheduler_choose_task();
   // This only happens if there are no tasks to schedule.
@@ -162,6 +176,10 @@ static void schedule(void) {
   }
 
   scheduler.current_task = next;
+
+  if (scheduler.config.preemptive) {
+    scheduler_set_timer();
+  }
 
   if (next->status == TASK_CREATED) {
     // Execute 'on_start' callback

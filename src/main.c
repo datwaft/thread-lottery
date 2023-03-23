@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "deps/pcg_basic.h"
 #include "scheduler.h"
@@ -107,7 +108,7 @@ int main(int argc, char **argv) {
     work_n[i] = pow(10, i + 3);
   }
 
-  scheduler_config_t config = {.preemptive = false,
+  scheduler_config_t config = {.preemptive = true,
                                .percentage_of_work_before_pause = 0.05,
                                .quantum_msec = 100};
 
