@@ -2,6 +2,11 @@
 #include <stdio.h>
 
 #define GLADE_FILE "glade/lottery-scheduler-gui-v2.glade"
+#define PREEMPETIVE 0
+#define NONPREEMPETIVE 1
+#define PREEMPETIVE_YIELD 100
+#define NONPREEMPETIVE_YIELD 10
+#define INVALID 999
 
 int valor = 0;
 
@@ -14,6 +19,7 @@ typedef struct gui_t {
   int default_ticket;
   int default_work;
   int default_thread_num;
+  int operation_mode;
   GtkWidget *window_main;
   GtkWidget *button_execute;
   GtkWidget *spin_thread_num;
@@ -60,6 +66,9 @@ static void activate(GtkApplication *app, gui_t gui, gpointer user_data) {
 
   gui.default_thread_num = 5;
 
+  // Default for operation mode 999.
+  gui.operation_mode = 999;
+
   /* Import UI designed via Glade */
   builder = gtk_builder_new();
   gtk_builder_add_from_file(builder, GLADE_FILE, NULL);
@@ -78,7 +87,8 @@ static void activate(GtkApplication *app, gui_t gui, gpointer user_data) {
   gui.cb_operation_mode =
       GTK_WIDGET(gtk_builder_get_object(builder, "cb_operation_mode"));
 
-  gui.label_unit = GTK_WIDGET(gtk_builder_get_object(builder, "label_unit"));
+  gui.label_quantum_or_percentage = GTK_WIDGET(
+      gtk_builder_get_object(builder, "label_quantum_or_percentage"));
 
   gui.view_thread_config =
       GTK_WIDGET(gtk_builder_get_object(builder, "view_thread_config"));
@@ -101,6 +111,10 @@ static void activate(GtkApplication *app, gui_t gui, gpointer user_data) {
 
   g_signal_connect(gui.spin_thread_num, "value-changed",
                    G_CALLBACK(on_changed_sbtn_thread_num), &gui);
+
+  gtk_widget_set_sensitive(gui.button_execute, FALSE);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui.spin_thread_num),
+                            gui.default_thread_num);
 
   g_object_unref(builder);
   gtk_widget_show(window_main);
@@ -214,32 +228,59 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
 }
 
 void on_changed(GtkComboBox *widget, gpointer data) {
-  g_print("You chose %s\n", "help am changed");
-  // gui_t *gui;
-  // gui = (gui_t *)data;
+  g_print("-----------");
+  gui_t *gui;
+  gui = (gui_t *)data;
 
-  // switch (gtk_combo_box_get_active(GTK_COMBO_BOX(gui->cb_operation_mode))) {
-  // case 0:
-  //   g_print("You chose %s\n", "0");
-  //   gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
-  //                      "Tamaño Quantum");
-  //   gtk_label_set_text(GTK_LABEL(gui->label_unit_quantum_or_percentage),
-  //   "ms"); break;
-  // case 1:
-  //   g_print("You chose %s\n", "1");
-  //   g_print("You chose %s\n", "0");
-  //   gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
-  //                      "Trabajo Mínimo");
-  //   gtk_label_set_text(GTK_LABEL(gui->label_unit_quantum_or_percentage),
-  //   "\%"); break;
-  // default:
-  //   g_print("You chose %s\n", "other");
-  //   break;
-  // }
+  switch (gtk_combo_box_get_active(GTK_COMBO_BOX(gui->cb_operation_mode))) {
+  case PREEMPETIVE:
+    g_print("Operation Mode: %s\n", "0");
+    gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
+                       "Tamaño Quantum(ms)");
+    gui->operation_mode = PREEMPETIVE;
+
+    // enable button
+    gtk_widget_set_sensitive(gui->button_execute, TRUE);
+
+    // reset to default values
+    clear_thread_conf_row(data);
+
+    generate_thread_conf_row(gui->default_thread_num, data);
+
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_thread_num),
+                              gui->default_thread_num);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_unit),
+                              PREEMPETIVE_YIELD);
+    break;
+  case NONPREEMPETIVE:
+    g_print("You chose %s\n", "1");
+    gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
+                       "Trabajo Mínimo(%)");
+
+    gui->operation_mode = NONPREEMPETIVE;
+
+    // enable button
+    gtk_widget_set_sensitive(gui->button_execute, TRUE);
+
+    // reset to default values
+    clear_thread_conf_row(data);
+
+    generate_thread_conf_row(gui->default_thread_num, data);
+
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_thread_num),
+                              gui->default_thread_num);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_unit),
+                              NONPREEMPETIVE_YIELD);
+    break;
+  default:
+    gui->operation_mode = INVALID;
+    g_print("Operation Mode: %s\n", "other");
+    break;
+  }
 }
 
 static void destroy(GtkWidget *widget, gpointer data) {
-  g_print("You chose %i\n", 333333);
+  g_print("Destroying all >:D\n");
   gtk_main_quit();
 }
 
@@ -256,7 +297,7 @@ int main(int argc, char **argv) {
 
   status = g_application_run(G_APPLICATION(app), argc, argv);
 
-  g_print("You chose %i\n", 333333);
+  g_print("Closing App\n");
   g_object_unref(app);
 
   return status;

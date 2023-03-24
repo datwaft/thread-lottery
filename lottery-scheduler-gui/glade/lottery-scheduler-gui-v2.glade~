@@ -194,7 +194,10 @@
                 <property name="height-request">40</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">end</property>
                 <property name="label" translatable="yes">Modo Operación</property>
+                <property name="justify">right</property>
+                <property name="ellipsize">end</property>
               </object>
               <packing>
                 <property name="x">20</property>
@@ -223,7 +226,11 @@
                 <property name="height-request">40</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">end</property>
+                <property name="valign">end</property>
                 <property name="label" translatable="yes">Número de Threads</property>
+                <property name="justify">right</property>
+                <property name="ellipsize">end</property>
               </object>
               <packing>
                 <property name="x">20</property>
@@ -255,7 +262,10 @@
                 <property name="height-request">40</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">end</property>
+                <property name="valign">end</property>
                 <property name="label" translatable="yes">-</property>
+                <property name="justify">right</property>
               </object>
               <packing>
                 <property name="x">20</property>
