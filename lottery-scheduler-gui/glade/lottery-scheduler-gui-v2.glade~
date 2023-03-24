@@ -195,6 +195,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="halign">end</property>
+                <property name="valign">end</property>
                 <property name="label" translatable="yes">Modo Operación</property>
                 <property name="justify">right</property>
                 <property name="ellipsize">end</property>
@@ -216,7 +217,7 @@
                 </items>
               </object>
               <packing>
-                <property name="x">160</property>
+                <property name="x">180</property>
                 <property name="y">20</property>
               </packing>
             </child>
@@ -230,6 +231,7 @@
                 <property name="valign">end</property>
                 <property name="label" translatable="yes">Número de Threads</property>
                 <property name="justify">right</property>
+                <property name="wrap">True</property>
                 <property name="ellipsize">end</property>
               </object>
               <packing>
@@ -252,7 +254,7 @@
                 <property name="value">5</property>
               </object>
               <packing>
-                <property name="x">160</property>
+                <property name="x">180</property>
                 <property name="y">70</property>
               </packing>
             </child>
@@ -273,7 +275,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSpinButton" id="spin_unit">
+              <object class="GtkSpinButton" id="spin_yield">
                 <property name="width-request">150</property>
                 <property name="height-request">40</property>
                 <property name="visible">True</property>
@@ -285,7 +287,7 @@
                 <property name="numeric">True</property>
               </object>
               <packing>
-                <property name="x">160</property>
+                <property name="x">180</property>
                 <property name="y">120</property>
               </packing>
             </child>

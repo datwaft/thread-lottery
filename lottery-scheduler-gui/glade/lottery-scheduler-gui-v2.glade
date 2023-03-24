@@ -275,7 +275,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSpinButton" id="spin_unit">
+              <object class="GtkSpinButton" id="spin_yield">
                 <property name="width-request">150</property>
                 <property name="height-request">40</property>
                 <property name="visible">True</property>
