@@ -75,20 +75,20 @@ all_tests: $(TEST_TARGETS)
 dist: $(DIST)
 
 $(TARGET): $(TARGET_OBJ) $(OBJS) $(RESOURCES)
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $(filter-out $(RESOURCES), $^) -o $@
 
 $(BUILD_DIR)/%.glade: $(RESOURCES_DIR)/%.glade
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	cp $< $@
 
 $(TEST_BUILD_DIR)/%: LDLIBS += -lcriterion
 $(TEST_BUILD_DIR)/%: $(TEST_DIR)/%.c $(OBJS)
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 # =================
