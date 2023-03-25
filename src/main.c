@@ -9,5 +9,7 @@ int main(int argc, char *argv[]) {
       "com.soa.lottery-scheduler", G_APPLICATION_DEFAULT_FLAGS);
   g_signal_connect(application, "activate", G_CALLBACK(application_on_activate),
                    NULL);
-  return g_application_run(G_APPLICATION(application), argc, argv);
+  int status = g_application_run(G_APPLICATION(application), argc, argv);
+  g_object_unref(application);
+  return status;
 }
