@@ -74,6 +74,7 @@ dist: $(DIST)
 $(TARGET): $(TARGET_OBJ) $(OBJS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
+	cp resources/template.glade $(dir $@)
 
 $(TEST_BUILD_DIR)/%: LDLIBS += -lcriterion
 $(TEST_BUILD_DIR)/%: $(TEST_DIR)/%.c $(OBJS)
