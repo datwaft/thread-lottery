@@ -3,7 +3,7 @@
 
 #include <gtk/gtk.h>
 
-#define GUI_TEMPLATE_FILENAME "template.glade"
+#define TEMPLATE_URI "/com/soa/lottery-scheduler/template.glade"
 
 void application_on_activate(GtkApplication *app, gpointer user_data);
 

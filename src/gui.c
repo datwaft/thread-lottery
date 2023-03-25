@@ -4,8 +4,7 @@ void application_on_activate(GtkApplication *app, gpointer user_data) {
   GtkBuilder *builder = gtk_builder_new();
 
   GError *error = NULL;
-  if (!gtk_builder_add_from_resource(
-          builder, "/com/soa/lottery-scheduler/template.glade", &error)) {
+  if (!gtk_builder_add_from_resource(builder, TEMPLATE_URI, &error)) {
     g_printerr("%s\n", error->message);
     exit(EXIT_FAILURE);
   }
