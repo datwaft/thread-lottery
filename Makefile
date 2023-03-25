@@ -56,9 +56,10 @@ CFLAGS += -Wall -Wextra -Wpedantic \
 					-Wformat=2 -Wno-unused-parameter -Wshadow \
 					-Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
 					-Wredundant-decls -Wnested-externs -Wmissing-include-dirs
+CFLAGS += $(shell pkg-config --cflags gtk+-3.0)
 CFLAGS += -Wno-language-extension-token
 CPPFLAGS += -I$(HEADER_DIR) -MMD -MP -g
-LDLIBS += -lm
+LDLIBS += -lm $(shell pkg-config --libs gtk+-3.0)
 
 # =================
 # Compilation rules
