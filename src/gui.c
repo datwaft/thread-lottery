@@ -2,10 +2,13 @@
 
 void application_on_activate(GtkApplication *app, gpointer user_data) {
   GtkBuilder *builder = gtk_builder_new();
-  if (!gtk_builder_add_from_file(builder, "template.glade", NULL)) {
-    fprintf(stderr, "Couldn't read template, aborting.\n");
-    abort();
+
+  GError *error = NULL;
+  if (!gtk_builder_add_from_file(builder, GUI_TEMPLATE_FILENAME, &error)) {
+    g_printerr("%s\n", error->message);
+    exit(EXIT_FAILURE);
   }
+
   GtkWidget *window =
       GTK_WIDGET(gtk_builder_get_object(builder, "window_main"));
   gtk_builder_connect_signals(builder, NULL);

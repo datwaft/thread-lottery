@@ -3,6 +3,8 @@
 
 #include <gtk/gtk.h>
 
+#define GUI_TEMPLATE_FILENAME "template.glade"
+
 void application_on_activate(GtkApplication *app, gpointer user_data);
 
 void window_on_delete_event(GtkWidget *widget, gpointer user_data);
