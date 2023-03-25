@@ -10,6 +10,7 @@ DOCUMENTATION := README.md CONTRIBUTING.md
 SRC_DIR := src
 HEADER_DIR := include
 TEST_DIR := tests
+RESOURCES_DIR := resources
 
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
@@ -28,6 +29,8 @@ SRCS := $(shell find $(SRC_DIR) -type f -path '**/*.c' 2> /dev/null)
 SRCS := $(filter-out $(TARGET_SRC), $(SRCS))
 HEADERS := $(shell find $(HEADER_DIR) -type f -path '**/*.h' 2> /dev/null)
 TEST_SRCS := $(shell find $(TEST_DIR) -type f -path '**/*.c' 2> /dev/null)
+RESOURCES := $(shell find $(RESOURCES_DIR) -type f -path '**/*.glade' 2> /dev/null)
+RESOURCES := $(RESOURCES:$(RESOURCES_DIR)/%=$(BUILD_DIR)/%)
 
 # -------------------
 # Byproduct variables
@@ -71,10 +74,13 @@ all_tests: $(TEST_TARGETS)
 .PHONY: dist
 dist: $(DIST)
 
-$(TARGET): $(TARGET_OBJ) $(OBJS)
+$(TARGET): $(TARGET_OBJ) $(OBJS) $(RESOURCES)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $^ -o $@
-	cp resources/template.glade $(dir $@)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) $(filter-out $(RESOURCES), $^) -o $@
+
+$(BUILD_DIR)/%.glade: $(RESOURCES_DIR)/%.glade
+	@mkdir -p $(dir $@)
+	cp $< $@
 
 $(TEST_BUILD_DIR)/%: LDLIBS += -lcriterion
 $(TEST_BUILD_DIR)/%: $(TEST_DIR)/%.c $(OBJS)
@@ -94,6 +100,10 @@ $(DIST): $(TARGET_SRC) $(SRCS) $(HEADERS) $(TEST_SRCS) $(MAKEFILE) $(DOCUMENTATI
 # ========================
 # Pseudo-target definition
 # ========================
+.PHONY: run
+run: $(TARGET)
+	cd $(<D) && ./$(<F)
+
 .PHONY: test
 test: $(TEST_TARGETS)
 	for test_file in $^; do ./$$test_file --verbose; done
