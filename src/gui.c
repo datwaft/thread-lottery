@@ -1,8 +1,8 @@
 #include "gui.h"
 
 GtkApplication *application_new(void) {
-  GtkApplication *application = gtk_application_new(
-      "com.soa.lottery-scheduler", G_APPLICATION_DEFAULT_FLAGS);
+  GtkApplication *application =
+      gtk_application_new(APPLICATION_ID, G_APPLICATION_DEFAULT_FLAGS);
   g_signal_connect(application, "activate", G_CALLBACK(application_on_activate),
                    NULL);
   return application;

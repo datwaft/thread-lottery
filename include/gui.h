@@ -3,6 +3,7 @@
 
 #include <gtk/gtk.h>
 
+#define APPLICATION_ID "com.soa.lottery-scheduler"
 #define TEMPLATE_URI "/com/soa/lottery-scheduler/template.ui"
 
 GtkApplication *application_new(void);
