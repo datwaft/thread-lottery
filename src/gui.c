@@ -1,5 +1,16 @@
 #include "gui.h"
 
+#include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "calculate_pi.h"
+#include "deps/pcg_basic.h"
+#include "scheduler.h"
+
 #define PREEMPTIVE 0
 #define NON_PREEMPTIVE 1
 #define PREEMPTIVE_YIELD 100
@@ -204,6 +215,11 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
   GList *children =
       gtk_container_get_children(GTK_CONTAINER(gui->box_thread_config));
 
+  size_t thread_n = _thread_num;
+
+  uint64_t ticket_n[thread_n];
+  int64_t work_n[thread_n];
+
   // get generated values of the thread conf box
   while (children) {
 
@@ -217,9 +233,63 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
     g_print("Thread: %i | Tickets: %i | Work: %i\n", _thread,
             ticket_column_value, work_column_value);
 
+    ticket_n[_thread] = ticket_column_value;
+    work_n[_thread] = pow(10, _thread + 3);
+
     children = children->next;
     _thread++;
   }
+
+  /*****/
+
+  // size_t thread_n = 5;
+  // uint64_t ticket_n[thread_n];
+
+  // for (size_t i = 0; i < thread_n; i++) {
+  //   ticket_n[i] = i + 1;
+  // }
+
+  // for (size_t i = 0; i < thread_n; i++) {
+  //   work_n[i] = pow(10, i + 3);
+  // }
+
+  // scheduler_config_t config = {.preemptive = !_cb_operation_mode,
+  //                              .percentage_of_work_before_pause = 0.05,
+  //                              .quantum_msec = 100};
+
+  scheduler_config_t config = {.preemptive = !_cb_operation_mode,
+                               .percentage_of_work_before_pause = _yield,
+                               .quantum_msec = _yield};
+
+  scheduler_init(config);
+  scheduler_on_start((scheduler_cf_addr_t)on_start);
+  scheduler_on_continue((scheduler_cf_addr_t)on_continue);
+  scheduler_on_pause((scheduler_cf_addr_t)on_pause);
+  scheduler_on_end((scheduler_cf_addr_t)on_end);
+
+  for (size_t i = 0; i < thread_n; ++i) {
+    args_t *args = malloc(sizeof(args_t));
+
+    args->i = 0;
+    args->n = work_n[i] * 50;
+    args->result = 0;
+    args->sign = 1;
+    args->divisor = 1;
+
+    scheduler_create_task((scheduler_f_addr_t)calculate_pi, args, ticket_n[i]);
+  }
+  scheduler_run();
+  g_print("\x1b[1m"
+          "Finished running all tasks!"
+          "\x1b[0m"
+          "\n");
+
+  g_print("end\n");
+  g_print("end\n");
+  g_print("end\n");
+  g_print("end\n");
+  g_print("end\n");
+  g_print("end\n");
 }
 
 void on_sbutton_changed(GtkComboBox *widget, gpointer data) {
