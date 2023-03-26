@@ -63,18 +63,6 @@ void application_on_activate(GtkApplication *app, gpointer _) {
 
   gtk_builder_connect_signals(builder, &user_data);
 
-  g_signal_connect(window, "destroy", G_CALLBACK(window_on_delete_event),
-                   &user_data);
-
-  g_signal_connect(user_data.button_execute, "clicked",
-                   G_CALLBACK(on_button_execute_clicked), &user_data);
-
-  g_signal_connect(user_data.cb_operation_mode, "changed",
-                   G_CALLBACK(on_sbutton_changed), &user_data);
-
-  g_signal_connect(user_data.spin_thread_num, "value-changed",
-                   G_CALLBACK(on_changed_sbtn_thread_num), &user_data);
-
   gtk_widget_set_sensitive(user_data.button_execute, FALSE);
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data.spin_thread_num),
                             user_data.default_thread_num);
