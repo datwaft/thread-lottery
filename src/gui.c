@@ -12,6 +12,10 @@
 #include "scheduler.h"
 
 static void reset_parameters(user_data_t *user_data, bool preemptive);
+static void generate_configuration_rows(int row_n, user_data_t *user_data);
+static GtkWidget *generate_execution_row(int row, user_data_t *user_data);
+static void clear_configuration_rows(user_data_t *user_data);
+static void clear_execution_rows(user_data_t *user_data);
 
 GtkApplication *application_new(void) {
   GtkApplication *application =
@@ -28,7 +32,7 @@ void application_on_activate(GtkApplication *app, gpointer _) {
   };
   gtk_builder_connect_signals(user_data.builder, &user_data);
 
-  generate_thread_conf_row(DEFAULT_THREAD_NUM, &user_data);
+  generate_configuration_rows(DEFAULT_THREAD_NUM, &user_data);
 
   GtkSpinButton *spin_thread_num = GTK_SPIN_BUTTON(
       gtk_builder_get_object(user_data.builder, "spin_thread_num"));
@@ -45,134 +49,18 @@ void window_on_delete_event(GtkWidget *widget, gpointer user_data) {
   gtk_main_quit();
 }
 
-GtkWidget *generate_thread_execution_row(int thread_id,
-                                         user_data_t *user_data) {
-  // create one grid_row per row, 3 columns
-  GtkWidget *grid_row;
-  grid_row = gtk_grid_new();
-
-  char str_thread_number[5];
-  sprintf(str_thread_number, "%d", thread_id);
-
-  GtkWidget *label_thread_id;
-  label_thread_id = gtk_label_new(str_thread_number);
-
-  GtkWidget *progress_bar_thread;
-  progress_bar_thread = gtk_progress_bar_new();
-  gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(progress_bar_thread), TRUE);
-
-  GtkWidget *label_thread_result;
-  label_thread_result = gtk_label_new("-");
-
-  // attach components to grid_row: left for thread num, center for ticket
-  // number, right for work
-  gtk_grid_attach(GTK_GRID(grid_row), label_thread_id, 0, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid_row), progress_bar_thread, 1, 0, 1, 1);
-  gtk_grid_attach(GTK_GRID(grid_row), label_thread_result, 2, 0, 1, 1);
-  gtk_widget_show(grid_row);
-
-  gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
-  gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
-
-  GtkBox *box_thread_execution = GTK_BOX(
-      gtk_builder_get_object(user_data->builder, "box_thread_execution"));
-  gtk_box_pack_start(box_thread_execution, grid_row, FALSE, FALSE, 3);
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  gtk_widget_override_color(label_thread_id, GTK_STATE_FLAG_NORMAL,
-                            &(GdkRGBA){.red = 1.0, .alpha = 1.0});
-#pragma clang diagnostic pop
-
-  gtk_widget_show(label_thread_id);
-  gtk_widget_show(progress_bar_thread);
-  gtk_widget_show(label_thread_result);
-
-  return grid_row;
-}
-
-void generate_thread_conf_row(int threads_num, user_data_t *user_data) {
-  for (int i = 0; i < threads_num; i++) {
-    // create one grid_row per row, 3 columns
-    GtkWidget *grid_row;
-    grid_row = gtk_grid_new();
-
-    char str_thread_number[5];
-    sprintf(str_thread_number, "%d", i);
-
-    GtkWidget *label_thread;
-    label_thread = gtk_label_new(str_thread_number);
-
-    GtkAdjustment *adjustment_ticket;
-    adjustment_ticket = gtk_adjustment_new(DEFAULT_TICKET, MIN_TICKET,
-                                           MAX_TICKET, 1.0, 5.0, 0.0);
-
-    GtkAdjustment *adjustment_work;
-    adjustment_work =
-        gtk_adjustment_new(DEFAULT_WORK, MIN_WORK, MAX_WORK, 1.0, 5.0, 0.0);
-
-    GtkWidget *sbtn_ticket;
-    sbtn_ticket = gtk_spin_button_new(adjustment_ticket, 1.0, 0);
-    gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(sbtn_ticket), TRUE);
-
-    GtkWidget *sbtn_work;
-    sbtn_work = gtk_spin_button_new(adjustment_work, 1.0, 0);
-    gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(sbtn_work), TRUE);
-
-    // attach components to grid_row: left for thread num, center for ticket
-    // number, right for work
-    gtk_grid_attach(GTK_GRID(grid_row), label_thread, 0, 0, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid_row), sbtn_ticket, 1, 0, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid_row), sbtn_work, 2, 0, 1, 1);
-    gtk_widget_show(grid_row);
-
-    gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
-    gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
-
-    GtkBox *box_thread_config = GTK_BOX(
-        gtk_builder_get_object(user_data->builder, "box_thread_config"));
-    gtk_box_pack_start(box_thread_config, grid_row, FALSE, FALSE, 3);
-
-    gtk_widget_show(sbtn_ticket);
-    gtk_widget_show(sbtn_work);
-    gtk_widget_show(label_thread);
-  }
-}
-
-void clear_thread_conf_row(user_data_t *user_data) {
-  GtkContainer *box_thread_config = GTK_CONTAINER(
-      gtk_builder_get_object(user_data->builder, "box_thread_config"));
-  GList *children = gtk_container_get_children(box_thread_config);
-  while (children) {
-    gtk_container_remove(box_thread_config, children->data);
-    children = children->next;
-  }
-}
-
-void clear_thread_execution_row(user_data_t *user_data) {
-  GtkContainer *box_thread_execution = GTK_CONTAINER(
-      gtk_builder_get_object(user_data->builder, "box_thread_execution"));
-  GList *children = gtk_container_get_children(box_thread_execution);
-  while (children) {
-    gtk_container_remove(box_thread_execution, children->data);
-    children = children->next;
-  }
-}
-
 void on_changed_sbtn_thread_num(GtkComboBox *widget, user_data_t *user_data) {
   GtkSpinButton *spin_thread_num = GTK_SPIN_BUTTON(
       gtk_builder_get_object(user_data->builder, "spin_thread_num"));
-  gint threads_to_generate = gtk_spin_button_get_value(spin_thread_num);
-  g_print("Change in thread to generate: %i\n", threads_to_generate);
+  gint new_rows = gtk_spin_button_get_value(spin_thread_num);
+  g_print("Change in thread to generate: %i\n", new_rows);
 
-  // remove all children
-  clear_thread_conf_row(user_data);
-
-  generate_thread_conf_row(threads_to_generate, user_data);
+  clear_configuration_rows(user_data);
+  generate_configuration_rows(new_rows, user_data);
 }
 
 void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
-  clear_thread_execution_row(user_data);
+  clear_execution_rows(user_data);
 
   GtkComboBox *cb_operation_mode = GTK_COMBO_BOX(
       gtk_builder_get_object(user_data->builder, "cb_operation_mode"));
@@ -241,7 +129,7 @@ void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
     args->result = 0;
     args->sign = 1;
     args->divisor = 1;
-    args->row = generate_thread_execution_row(i, user_data);
+    args->row = generate_execution_row(i, user_data);
 
     scheduler_create_task((scheduler_f_addr_t)calculate_pi, args, ticket_n[i]);
   }
@@ -285,9 +173,103 @@ void on_mode_change(GtkComboBox *widget, user_data_t *user_data) {
   }
 }
 
+static void clear_configuration_rows(user_data_t *user_data) {
+  GtkContainer *box_thread_config = GTK_CONTAINER(
+      gtk_builder_get_object(user_data->builder, "box_thread_config"));
+  GList *children = gtk_container_get_children(box_thread_config);
+  while (children) {
+    gtk_container_remove(box_thread_config, children->data);
+    children = children->next;
+  }
+}
+
+static void clear_execution_rows(user_data_t *user_data) {
+  GtkContainer *box_thread_execution = GTK_CONTAINER(
+      gtk_builder_get_object(user_data->builder, "box_thread_execution"));
+  GList *children = gtk_container_get_children(box_thread_execution);
+  while (children) {
+    gtk_container_remove(box_thread_execution, children->data);
+    children = children->next;
+  }
+}
+
+static GtkWidget *generate_execution_row(int row, user_data_t *user_data) {
+  GtkWidget *grid_row = gtk_grid_new();
+
+  char row_str[5]; // We probably won't need more than 5 digits.
+  sprintf(row_str, "%d", row);
+  GtkWidget *label_row = gtk_label_new(row_str);
+
+  GtkWidget *progress_bar = gtk_progress_bar_new();
+  gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(progress_bar), TRUE);
+
+  GtkWidget *label_result = gtk_label_new("-");
+
+  gtk_grid_attach(GTK_GRID(grid_row), label_row, 0, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid_row), progress_bar, 1, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid_row), label_result, 2, 0, 1, 1);
+  gtk_widget_show(grid_row);
+
+  gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
+  gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
+
+  GtkBox *box_thread_execution = GTK_BOX(
+      gtk_builder_get_object(user_data->builder, "box_thread_execution"));
+  gtk_box_pack_start(box_thread_execution, grid_row, FALSE, FALSE, 3);
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  gtk_widget_override_color(label_row, GTK_STATE_FLAG_NORMAL,
+                            &(GdkRGBA){.red = 1.0, .alpha = 1.0});
+#pragma clang diagnostic pop
+
+  gtk_widget_show(label_row);
+  gtk_widget_show(progress_bar);
+  gtk_widget_show(label_result);
+
+  return grid_row;
+}
+
+static void generate_configuration_rows(int row_n, user_data_t *user_data) {
+  for (int row = 0; row < row_n; row++) {
+    GtkWidget *grid_row = gtk_grid_new();
+
+    // We start at enumerating rows at 1.
+    char row_str[5]; // We probably won't need more than 5 digits.
+    sprintf(row_str, "%d", row + 1);
+    GtkWidget *label_row = gtk_label_new(row_str);
+
+    GtkAdjustment *adjustment_ticket = gtk_adjustment_new(
+        DEFAULT_TICKET, MIN_TICKET, MAX_TICKET, 1.0, 5.0, 0.0);
+    GtkWidget *sbtn_ticket = gtk_spin_button_new(adjustment_ticket, 1.0, 0);
+    gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(sbtn_ticket), true);
+
+    GtkAdjustment *adjustment_work =
+        gtk_adjustment_new(DEFAULT_WORK, MIN_WORK, MAX_WORK, 1.0, 5.0, 0.0);
+    GtkWidget *sbtn_work = gtk_spin_button_new(adjustment_work, 1.0, 0);
+    gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(sbtn_work), true);
+
+    gtk_grid_attach(GTK_GRID(grid_row), label_row, 0, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid_row), sbtn_ticket, 1, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid_row), sbtn_work, 2, 0, 1, 1);
+    gtk_widget_show(grid_row);
+
+    gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
+    gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
+
+    GtkBox *box_thread_config = GTK_BOX(
+        gtk_builder_get_object(user_data->builder, "box_thread_config"));
+    gtk_box_pack_start(box_thread_config, grid_row, FALSE, FALSE, 3);
+
+    gtk_widget_show(sbtn_ticket);
+    gtk_widget_show(sbtn_work);
+    gtk_widget_show(label_row);
+  }
+}
+
 static void reset_parameters(user_data_t *user_data, bool preemptive) {
-  clear_thread_conf_row(user_data);
-  generate_thread_conf_row(DEFAULT_THREAD_NUM, user_data);
+  clear_configuration_rows(user_data);
+  generate_configuration_rows(DEFAULT_THREAD_NUM, user_data);
 
   GtkSpinButton *spin_thread_num = GTK_SPIN_BUTTON(
       gtk_builder_get_object(user_data->builder, "spin_thread_num"));

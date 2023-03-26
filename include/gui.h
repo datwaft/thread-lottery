@@ -37,15 +37,6 @@ void application_on_activate(GtkApplication *app, gpointer user_data);
 
 void window_on_delete_event(GtkWidget *widget, gpointer user_data);
 
-void generate_thread_conf_row(int threads_num, user_data_t *user_data);
-
-GtkWidget *generate_thread_execution_row(int threads_num,
-                                         user_data_t *user_data);
-
-void clear_thread_conf_row(user_data_t *user_data);
-
-void clear_thread_execution_row(user_data_t *user_data);
-
 void on_changed_sbtn_thread_num(GtkComboBox *widget, user_data_t *user_data);
 
 void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data);
