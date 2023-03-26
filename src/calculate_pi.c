@@ -1,6 +1,9 @@
 #include "calculate_pi.h"
 #include <stdio.h>
 
+static void update_ui(GtkWidget *widget, double result,
+                      double progress_percent);
+
 void calculate_pi(args_t *args, scheduler_config_t config) {
   for (; args->i < args->n; args->i += 1) {
     args->result += args->sign / args->divisor;
@@ -14,28 +17,6 @@ void calculate_pi(args_t *args, scheduler_config_t config) {
     }
   }
   args->result = 4 * args->result;
-}
-
-void update_ui(GtkWidget *widget, double result, double progress_percent) {
-  // result label
-  char result_str[30];
-  sprintf(result_str, "%0.20f", result);
-  gtk_label_set_text(GTK_LABEL(gtk_grid_get_child_at(GTK_GRID(widget), 2, 0)),
-                     result_str);
-
-  // progress bar
-  gtk_progress_bar_set_fraction(
-      GTK_PROGRESS_BAR(gtk_grid_get_child_at(GTK_GRID(widget), 1, 0)),
-      progress_percent);
-
-  // done result coloring
-  if (progress_percent >= 1.0) {
-    const static GdkRGBA green = {
-        .red = 0.0, .green = 1.0, .blue = 0.0, .alpha = 1.0};
-    gtk_widget_override_color(
-        GTK_LABEL(gtk_grid_get_child_at(GTK_GRID(widget), 0, 0)),
-        GTK_STATE_FLAG_NORMAL, &green);
-  }
 }
 
 void on_start(size_t id, args_t *args) {
@@ -106,4 +87,28 @@ void on_end(size_t id, args_t *args) {
          "\n",
          color, id, args->n, args->result);
   update_ui(args->row, args->result, (args->i / (double_t)args->n));
+}
+
+static void update_ui(GtkWidget *widget, double result,
+                      double progress_percent) {
+  // result label
+  char result_str[30];
+  sprintf(result_str, "%0.20f", result);
+  gtk_label_set_text(GTK_LABEL(gtk_grid_get_child_at(GTK_GRID(widget), 2, 0)),
+                     result_str);
+
+  // progress bar
+  gtk_progress_bar_set_fraction(
+      GTK_PROGRESS_BAR(gtk_grid_get_child_at(GTK_GRID(widget), 1, 0)),
+      progress_percent);
+
+  // done result coloring
+  if (progress_percent >= 1.0) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    gtk_widget_override_color(gtk_grid_get_child_at(GTK_GRID(widget), 0, 0),
+                              GTK_STATE_FLAG_NORMAL,
+                              &(GdkRGBA){.green = 1.0, .alpha = 1.0});
+#pragma clang diagnostic pop
+  }
 }

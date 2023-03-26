@@ -106,9 +106,12 @@ GtkWidget *generate_thread_execution_row(int thread_id,
   gtk_box_pack_start(GTK_BOX(user_data->box_thread_execution), grid_row, FALSE,
                      FALSE, 3);
 
-  const static GdkRGBA red = {
-      .red = 1.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
-  gtk_widget_override_color(label_thread_id, GTK_STATE_FLAG_NORMAL, &red);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  gtk_widget_override_color(label_thread_id, GTK_STATE_FLAG_NORMAL,
+                            &(GdkRGBA){.red = 1.0, .alpha = 1.0});
+#pragma clang diagnostic pop
+
   gtk_widget_show(label_thread_id);
   gtk_widget_show(progress_bar_thread);
   gtk_widget_show(label_thread_result);
@@ -267,8 +270,8 @@ void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
     scheduler_create_task((scheduler_f_addr_t)calculate_pi, args, ticket_n[i]);
   }
 
-  g_thread_new("run_scheduler_main_thread", scheduler_run, user_data);
-  // scheduler_run();
+  g_thread_new("run_scheduler_main_thread", (GThreadFunc)scheduler_run,
+               user_data);
 
   g_print("\x1b[1m"
           "Finished running all tasks!"
