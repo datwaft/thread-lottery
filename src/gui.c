@@ -63,7 +63,6 @@ void application_on_activate(GtkApplication *app, gpointer _) {
 
   gtk_builder_connect_signals(builder, &user_data);
 
-  gtk_widget_set_sensitive(user_data.button_execute, FALSE);
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data.spin_thread_num),
                             user_data.default_thread_num);
 
