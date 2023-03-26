@@ -41,6 +41,9 @@ static struct {
   context_t context;
   scheduler_config_t config;
 
+  size_t id;
+  bool finished;
+
   task_t *current_task;
   kvec_t(task_t *) tasks;
 
@@ -59,6 +62,8 @@ static void scheduler_set_timer(void);
 
 void scheduler_init(scheduler_config_t config) {
   scheduler.config = config;
+  scheduler.id = 0;
+  scheduler.finished = false;
   scheduler.current_task = NULL;
   kv_init(scheduler.tasks);
   signal(SIGALRM, scheduler_timer_callback);
@@ -82,11 +87,9 @@ void scheduler_on_end(scheduler_cf_addr_t cf_addr) {
 
 void scheduler_create_task(scheduler_f_addr_t f_addr, void *f_arg,
                            uint64_t ticket_n) {
-  static size_t id = 1;
-
   task_t *task = malloc(sizeof(*task));
   task->status = TASK_CREATED;
-  task->id = id++;
+  task->id = scheduler.id++;
   task->ticket_n = ticket_n;
   task->f_addr = f_addr;
   task->f_arg = f_arg;
@@ -159,7 +162,9 @@ void scheduler_run(void) {
 }
 
 static void scheduler_timer_callback(int signum) {
-  scheduler_pause_current_task();
+  if (!scheduler.finished) {
+    scheduler_pause_current_task();
+  }
 }
 
 static void scheduler_set_timer(void) {
@@ -171,6 +176,7 @@ static void schedule(void) {
   // This only happens if there are no tasks to schedule.
   if (next == NULL) {
     scheduler_free_task_list();
+    scheduler.finished = true;
     // NOTE: this is the only case in which this function may return.
     return;
   }
@@ -246,7 +252,10 @@ static void scheduler_free_current_task(void) {
   free(task);
 }
 
-static void scheduler_free_task_list(void) { kv_destroy(scheduler.tasks); }
+static void scheduler_free_task_list(void) {
+  kv_destroy(scheduler.tasks);
+  kv_init(scheduler.tasks);
+}
 
 // The code here was inspired by:
 // https://brennan.io/2020/05/24/userspace-cooperative-multitasking/
