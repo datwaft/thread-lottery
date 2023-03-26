@@ -21,13 +21,6 @@ GtkApplication *application_new(void) {
 
 void application_on_activate(GtkApplication *app, gpointer _) {
   user_data_t user_data = {
-      .min_ticket = MIN_TICKET,
-      .max_ticket = MAX_TICKET,
-      .min_work = MIN_WORK,
-      .max_work = MAX_WORK,
-      .default_ticket = DEFAULT_TICKET,
-      .default_work = DEFAULT_WORK,
-      .default_thread_num = DEFAULT_THREAD_NUM,
       .operation_mode = INVALID,
   };
 
@@ -59,12 +52,12 @@ void application_on_activate(GtkApplication *app, gpointer _) {
   user_data.adjustment_yield =
       GTK_ADJUSTMENT(gtk_builder_get_object(builder, "adjustment_yield"));
 
-  generate_thread_conf_row(user_data.default_thread_num, &user_data);
+  generate_thread_conf_row(DEFAULT_THREAD_NUM, &user_data);
 
   gtk_builder_connect_signals(builder, &user_data);
 
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data.spin_thread_num),
-                            user_data.default_thread_num);
+                            DEFAULT_THREAD_NUM);
 
   gtk_widget_show_all(window);
   gtk_main();
@@ -132,14 +125,12 @@ void generate_thread_conf_row(int threads_num, user_data_t *user_data) {
     label_thread = gtk_label_new(str_thread_number);
 
     GtkAdjustment *adjustment_ticket;
-    adjustment_ticket =
-        gtk_adjustment_new(user_data->default_ticket, user_data->min_ticket,
-                           user_data->max_ticket, 1.0, 5.0, 0.0);
+    adjustment_ticket = gtk_adjustment_new(DEFAULT_TICKET, MIN_TICKET,
+                                           MAX_TICKET, 1.0, 5.0, 0.0);
 
     GtkAdjustment *adjustment_work;
     adjustment_work =
-        gtk_adjustment_new(user_data->default_work, user_data->min_work,
-                           user_data->max_work, 1.0, 5.0, 0.0);
+        gtk_adjustment_new(DEFAULT_WORK, MIN_WORK, MAX_WORK, 1.0, 5.0, 0.0);
 
     GtkWidget *sbtn_ticket;
     sbtn_ticket = gtk_spin_button_new(adjustment_ticket, 1.0, 0);
@@ -298,10 +289,10 @@ void on_sbutton_changed(GtkComboBox *widget, user_data_t *user_data) {
     // reset to default values
     clear_thread_conf_row(user_data);
 
-    generate_thread_conf_row(user_data->default_thread_num, user_data);
+    generate_thread_conf_row(DEFAULT_THREAD_NUM, user_data);
 
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data->spin_thread_num),
-                              user_data->default_thread_num);
+                              DEFAULT_THREAD_NUM);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data->spin_yield),
                               DEFAULT_PREEMPTIVE_YIELD);
     gtk_adjustment_set_lower(user_data->adjustment_yield, MIN_PREEMPTIVE_YIELD);
@@ -320,10 +311,10 @@ void on_sbutton_changed(GtkComboBox *widget, user_data_t *user_data) {
     // reset to default values
     clear_thread_conf_row(user_data);
 
-    generate_thread_conf_row(user_data->default_thread_num, user_data);
+    generate_thread_conf_row(DEFAULT_THREAD_NUM, user_data);
 
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data->spin_thread_num),
-                              user_data->default_thread_num);
+                              DEFAULT_THREAD_NUM);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data->spin_yield),
                               DEFAULT_NON_PREEMPTIVE_YIELD);
     gtk_adjustment_set_lower(user_data->adjustment_yield,

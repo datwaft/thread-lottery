@@ -27,14 +27,6 @@
 #define DEFAULT_NON_PREEMPTIVE_YIELD 10
 
 typedef struct user_data_st {
-  float progress;
-  int min_ticket;
-  int max_ticket;
-  int min_work;
-  int max_work;
-  int default_ticket;
-  int default_work;
-  int default_thread_num;
   int operation_mode;
   GtkWidget *window_main;
   GtkWidget *button_execute;
