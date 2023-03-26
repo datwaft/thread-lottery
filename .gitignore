@@ -6,3 +6,6 @@ build/
 
 # Personal LSP configuration
 compile_commands.json
+
+# Glade temporal files
+*~
