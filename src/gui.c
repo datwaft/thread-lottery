@@ -53,7 +53,6 @@ void on_changed_sbtn_thread_num(GtkComboBox *widget, user_data_t *user_data) {
   GtkSpinButton *spin_thread_num = GTK_SPIN_BUTTON(
       gtk_builder_get_object(user_data->builder, "spin_thread_num"));
   gint new_rows = gtk_spin_button_get_value(spin_thread_num);
-  g_print("Change in thread to generate: %i\n", new_rows);
 
   clear_configuration_rows(user_data);
   generate_configuration_rows(new_rows, user_data);
@@ -72,11 +71,6 @@ void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
   gint _cb_operation_mode = gtk_combo_box_get_active(cb_operation_mode);
   gint _thread_num = gtk_spin_button_get_value(spin_thread_num);
   gint _yield = gtk_spin_button_get_value(spin_yield);
-
-  g_print("\n --- Execution Configuration ---\n");
-  g_print("Operation Mode: %i\n", _cb_operation_mode);
-  g_print("Threads: %i\n", _thread_num);
-  g_print("Yield: %i\n", _yield);
 
   int _thread = 0;
 
@@ -98,9 +92,6 @@ void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
 
     gint work_column_value = gtk_spin_button_get_value(
         GTK_SPIN_BUTTON(gtk_grid_get_child_at(GTK_GRID(children->data), 2, 0)));
-
-    g_print("Thread: %i | Tickets: %i | Work: %i\n", _thread,
-            ticket_column_value, work_column_value);
 
     ticket_n[_thread] = ticket_column_value;
     // work_n[_thread] = pow(10, _thread + 3);
@@ -136,13 +127,6 @@ void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
 
   g_thread_new("run_scheduler_main_thread", (GThreadFunc)scheduler_run,
                user_data);
-
-  g_print("\x1b[1m"
-          "Finished running all tasks!"
-          "\x1b[0m"
-          "\n");
-
-  g_print("end\n");
 }
 
 void on_mode_change(GtkComboBox *widget, user_data_t *user_data) {
