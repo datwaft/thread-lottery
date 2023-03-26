@@ -11,47 +11,6 @@
 #include "deps/pcg_basic.h"
 #include "scheduler.h"
 
-#define PREEMPTIVE 0
-#define NON_PREEMPTIVE 1
-#define INVALID 999
-#define MIN_TICKET 1
-#define MAX_TICKET 1000
-#define MIN_WORK 1
-#define MAX_WORK 10000000
-#define DEFAULT_THREAD_NUM 5
-#define DEFAULT_TICKET 5
-#define DEFAULT_WORK 100000
-#define DEFAULT_PREEMPTIVE_YIELD 100
-#define DEFAULT_NON_PREEMPTIVE_YIELD 10
-#define MIN_PREEMPTIVE_YIELD 100
-#define MAX_PREEMPTIVE_YIELD 10000
-#define MIN_NON_PREEMPTIVE_YIELD 1
-#define MAX_NON_PREEMPTIVE_YIELD 100
-
-typedef struct gui_t {
-  float progress;
-  int min_ticket;
-  int max_ticket;
-  int min_work;
-  int max_work;
-  int default_ticket;
-  int default_work;
-  int default_thread_num;
-  int operation_mode;
-  GtkWidget *window_main;
-  GtkWidget *button_execute;
-  GtkWidget *spin_thread_num;
-  GtkWidget *spin_yield;
-  GtkWidget *cb_operation_mode;
-  GtkWidget *label_quantum_or_percentage;
-  GtkWidget *entry_quantum_or_percentage;
-  GtkWidget *label_unit;
-  GtkWidget *generic_progress_bar;
-  GtkWidget *box_thread_config;
-  GtkWidget *box_thread_execution;
-  GtkAdjustment *adjustment_yield;
-} gui_t;
-
 GtkApplication *application_new(void) {
   GtkApplication *application =
       gtk_application_new(APPLICATION_ID, G_APPLICATION_FLAGS_NONE);
@@ -60,64 +19,65 @@ GtkApplication *application_new(void) {
   return application;
 }
 
-void application_on_activate(GtkApplication *app, gpointer user_data) {
-  gui_t gui;
-  // Default values
-  gui.min_ticket = MIN_TICKET;
-  gui.max_ticket = MAX_TICKET;
-  gui.min_work = MIN_WORK;
-  gui.max_work = MAX_WORK;
-  gui.default_ticket = DEFAULT_TICKET;
-  gui.default_work = DEFAULT_WORK;
-  gui.default_thread_num = DEFAULT_THREAD_NUM;
-  gui.operation_mode = INVALID;
+void application_on_activate(GtkApplication *app, gpointer _) {
+  user_data_t user_data = {
+      .min_ticket = MIN_TICKET,
+      .max_ticket = MAX_TICKET,
+      .min_work = MIN_WORK,
+      .max_work = MAX_WORK,
+      .default_ticket = DEFAULT_TICKET,
+      .default_work = DEFAULT_WORK,
+      .default_thread_num = DEFAULT_THREAD_NUM,
+      .operation_mode = INVALID,
+  };
 
   GtkBuilder *builder = gtk_builder_new_from_resource(TEMPLATE_URI);
   GtkWidget *window =
       GTK_WIDGET(gtk_builder_get_object(builder, "window_main"));
 
-  gui.button_execute =
+  user_data.button_execute =
       GTK_WIDGET(gtk_builder_get_object(builder, "button_execute"));
 
-  gui.spin_thread_num =
+  user_data.spin_thread_num =
       GTK_WIDGET(gtk_builder_get_object(builder, "spin_thread_num"));
 
-  gui.spin_yield = GTK_WIDGET(gtk_builder_get_object(builder, "spin_yield"));
+  user_data.spin_yield =
+      GTK_WIDGET(gtk_builder_get_object(builder, "spin_yield"));
 
-  gui.cb_operation_mode =
+  user_data.cb_operation_mode =
       GTK_WIDGET(gtk_builder_get_object(builder, "cb_operation_mode"));
 
-  gui.label_quantum_or_percentage = GTK_WIDGET(
+  user_data.label_quantum_or_percentage = GTK_WIDGET(
       gtk_builder_get_object(builder, "label_quantum_or_percentage"));
 
-  gui.box_thread_execution =
+  user_data.box_thread_execution =
       GTK_WIDGET(gtk_builder_get_object(builder, "box_thread_execution"));
 
-  gui.box_thread_config =
+  user_data.box_thread_config =
       GTK_WIDGET(gtk_builder_get_object(builder, "box_thread_config"));
 
-  gui.adjustment_yield =
+  user_data.adjustment_yield =
       GTK_ADJUSTMENT(gtk_builder_get_object(builder, "adjustment_yield"));
 
-  generate_thread_conf_row(gui.default_thread_num, &gui);
+  generate_thread_conf_row(user_data.default_thread_num, &user_data);
 
-  /* Connect components signal to functions */
-  gtk_builder_connect_signals(builder, NULL);
+  gtk_builder_connect_signals(builder, &user_data);
 
-  g_signal_connect(window, "destroy", G_CALLBACK(window_on_delete_event), &gui);
+  g_signal_connect(window, "destroy", G_CALLBACK(window_on_delete_event),
+                   &user_data);
 
-  g_signal_connect(gui.button_execute, "clicked",
-                   G_CALLBACK(on_button_execute_clicked), &gui);
+  g_signal_connect(user_data.button_execute, "clicked",
+                   G_CALLBACK(on_button_execute_clicked), &user_data);
 
-  g_signal_connect(gui.cb_operation_mode, "changed",
-                   G_CALLBACK(on_sbutton_changed), &gui);
+  g_signal_connect(user_data.cb_operation_mode, "changed",
+                   G_CALLBACK(on_sbutton_changed), &user_data);
 
-  g_signal_connect(gui.spin_thread_num, "value-changed",
-                   G_CALLBACK(on_changed_sbtn_thread_num), &gui);
+  g_signal_connect(user_data.spin_thread_num, "value-changed",
+                   G_CALLBACK(on_changed_sbtn_thread_num), &user_data);
 
-  gtk_widget_set_sensitive(gui.button_execute, FALSE);
-  gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui.spin_thread_num),
-                            gui.default_thread_num);
+  gtk_widget_set_sensitive(user_data.button_execute, FALSE);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data.spin_thread_num),
+                            user_data.default_thread_num);
 
   gtk_widget_show_all(window);
   gtk_main();
@@ -128,8 +88,8 @@ void window_on_delete_event(GtkWidget *widget, gpointer user_data) {
 }
 
 GtkWidget *generate_thread_execution_row(int thread_id, gpointer data) {
-  gui_t *gui;
-  gui = (gui_t *)data;
+  user_data_t *gui;
+  gui = (user_data_t *)data;
 
   // create one grid_row per row, 3 columns
   GtkWidget *grid_row;
@@ -172,8 +132,8 @@ GtkWidget *generate_thread_execution_row(int thread_id, gpointer data) {
 }
 
 void generate_thread_conf_row(int threads_num, gpointer data) {
-  gui_t *gui;
-  gui = (gui_t *)data;
+  user_data_t *gui;
+  gui = (user_data_t *)data;
 
   for (int i = 0; i < threads_num; i++) {
     // create one grid_row per row, 3 columns
@@ -222,8 +182,8 @@ void generate_thread_conf_row(int threads_num, gpointer data) {
 }
 
 void clear_thread_conf_row(gpointer data) {
-  gui_t *gui;
-  gui = (gui_t *)data;
+  user_data_t *gui;
+  gui = (user_data_t *)data;
 
   GList *children =
       gtk_container_get_children(GTK_CONTAINER(gui->box_thread_config));
@@ -235,8 +195,8 @@ void clear_thread_conf_row(gpointer data) {
 }
 
 void clear_thread_execution_row(gpointer data) {
-  gui_t *gui;
-  gui = (gui_t *)data;
+  user_data_t *gui;
+  gui = (user_data_t *)data;
 
   GList *children =
       gtk_container_get_children(GTK_CONTAINER(gui->box_thread_execution));
@@ -249,8 +209,8 @@ void clear_thread_execution_row(gpointer data) {
 }
 
 void on_changed_sbtn_thread_num(GtkComboBox *widget, gpointer data) {
-  gui_t *gui;
-  gui = (gui_t *)data;
+  user_data_t *gui;
+  gui = (user_data_t *)data;
 
   gint threads_to_generate =
       gtk_spin_button_get_value(GTK_SPIN_BUTTON(gui->spin_thread_num));
@@ -263,8 +223,8 @@ void on_changed_sbtn_thread_num(GtkComboBox *widget, gpointer data) {
 }
 
 void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
-  gui_t *gui;
-  gui = (gui_t *)data;
+  user_data_t *gui;
+  gui = (user_data_t *)data;
 
   clear_thread_execution_row(data);
 
@@ -345,8 +305,8 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
 }
 
 void on_sbutton_changed(GtkComboBox *widget, gpointer data) {
-  gui_t *gui;
-  gui = (gui_t *)data;
+  user_data_t *gui;
+  gui = (user_data_t *)data;
 
   gint active_selection =
       gtk_combo_box_get_active(GTK_COMBO_BOX(gui->cb_operation_mode));
