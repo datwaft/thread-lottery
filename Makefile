@@ -72,6 +72,7 @@ CFLAGS += -Wno-language-extension-token -Wno-overlength-strings -Wno-gnu-pointer
 CFLAGS += $(shell pkg-config --cflags gtk+-3.0)
 CPPFLAGS += -I$(HEADER_DIR) -I$(HEADER_BUILD_DIR) -MMD -MP -g
 LDLIBS += -lm $(shell pkg-config --libs gtk+-3.0)
+LDFLAGS += -rdynamic
 
 # =================
 # Compilation rules
