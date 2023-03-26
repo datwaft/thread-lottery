@@ -119,45 +119,45 @@ void window_on_delete_event(GtkWidget *widget, gpointer user_data) {
   gtk_main_quit();
 }
 
-void generate_thread_execution_row(int threads_num, gpointer data) {
+GtkWidget *generate_thread_execution_row(int thread_id, gpointer data) {
   gui_t *gui;
   gui = (gui_t *)data;
 
-  for (int i = 0; i < threads_num; i++) {
-    // create one grid_row per row, 3 columns
-    GtkWidget *grid_row;
-    grid_row = gtk_grid_new();
+  // create one grid_row per row, 3 columns
+  GtkWidget *grid_row;
+  grid_row = gtk_grid_new();
 
-    char str_thread_number[5];
-    sprintf(str_thread_number, "%d", i);
+  char str_thread_number[5];
+  sprintf(str_thread_number, "%d", thread_id);
 
-    GtkWidget *label_thread_id;
-    label_thread_id = gtk_label_new(str_thread_number);
+  GtkWidget *label_thread_id;
+  label_thread_id = gtk_label_new(str_thread_number);
 
-    GtkWidget *progress_bar_thread;
-    progress_bar_thread = gtk_progress_bar_new();
-    gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(progress_bar_thread), TRUE);
+  GtkWidget *progress_bar_thread;
+  progress_bar_thread = gtk_progress_bar_new();
+  gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(progress_bar_thread), TRUE);
 
-    GtkWidget *label_thread_result;
-    label_thread_result = gtk_label_new("-");
+  GtkWidget *label_thread_result;
+  label_thread_result = gtk_label_new("-");
 
-    // attach components to grid_row: left for thread num, center for ticket
-    // number, right for work
-    gtk_grid_attach(GTK_GRID(grid_row), label_thread_id, 0, 0, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid_row), progress_bar_thread, 1, 0, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid_row), label_thread_result, 2, 0, 1, 1);
-    gtk_widget_show(grid_row);
+  // attach components to grid_row: left for thread num, center for ticket
+  // number, right for work
+  gtk_grid_attach(GTK_GRID(grid_row), label_thread_id, 0, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid_row), progress_bar_thread, 1, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid_row), label_thread_result, 2, 0, 1, 1);
+  gtk_widget_show(grid_row);
 
-    gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
-    gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
+  gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
+  gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
 
-    gtk_box_pack_start(GTK_BOX(gui->box_thread_execution), grid_row, FALSE,
-                       FALSE, 3);
+  gtk_box_pack_start(GTK_BOX(gui->box_thread_execution), grid_row, FALSE, FALSE,
+                     3);
 
-    gtk_widget_show(label_thread_id);
-    gtk_widget_show(progress_bar_thread);
-    gtk_widget_show(label_thread_result);
-  }
+  gtk_widget_show(label_thread_id);
+  gtk_widget_show(progress_bar_thread);
+  gtk_widget_show(label_thread_result);
+
+  return grid_row;
 }
 
 void generate_thread_conf_row(int threads_num, gpointer data) {
@@ -255,6 +255,8 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
   gui_t *gui;
   gui = (gui_t *)data;
 
+  clear_thread_execution_row(data);
+
   gint _cb_operation_mode =
       gtk_combo_box_get_active(GTK_COMBO_BOX(gui->cb_operation_mode));
   gint _thread_num =
@@ -289,42 +291,48 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
             ticket_column_value, work_column_value);
 
     ticket_n[_thread] = ticket_column_value;
-    work_n[_thread] = pow(10, _thread + 3);
+    // work_n[_thread] = pow(10, _thread + 3);
+    work_n[_thread] = 10000000;
 
     children = children->next;
     _thread++;
   }
 
-  clear_thread_execution_row(data);
-  generate_thread_execution_row(_thread_num, data);
+  // generate_thread_execution_row(_thread_num, data);
 
-  // scheduler_config_t config = {.preemptive = !_cb_operation_mode,
-  //                              .percentage_of_work_before_pause = _yield,
-  //                              .quantum_msec = _yield};
+  scheduler_config_t config = {.preemptive = !_cb_operation_mode,
+                               .percentage_of_work_before_pause = 0.05,
+                               .quantum_msec = 100};
 
-  // scheduler_init(config);
-  // scheduler_on_start((scheduler_cf_addr_t)on_start);
-  // scheduler_on_continue((scheduler_cf_addr_t)on_continue);
-  // scheduler_on_pause((scheduler_cf_addr_t)on_pause);
-  // scheduler_on_end((scheduler_cf_addr_t)on_end);
+  scheduler_init(config);
+  scheduler_on_start((scheduler_cf_addr_t)on_start);
+  scheduler_on_continue((scheduler_cf_addr_t)on_continue);
+  scheduler_on_pause((scheduler_cf_addr_t)on_pause);
+  scheduler_on_end((scheduler_cf_addr_t)on_end);
 
-  // for (size_t i = 0; i < thread_n; ++i) {
-  //   args_t *args = malloc(sizeof(args_t));
+  for (size_t i = 0; i < thread_n; ++i) {
+    args_t *args = malloc(sizeof(args_t));
 
-  //   args->i = 0;
-  //   args->n = work_n[i] * 50;
-  //   args->result = 0;
-  //   args->sign = 1;
-  //   args->divisor = 1;
+    args->i = 0;
+    args->n = work_n[i] * 50;
+    args->result = 0;
+    args->sign = 1;
+    args->divisor = 1;
+    args->row = generate_thread_execution_row(i, data);
 
-  //   scheduler_create_task((scheduler_f_addr_t)calculate_pi, args,
-  //   ticket_n[i]);
-  // }
+    scheduler_create_task((scheduler_f_addr_t)calculate_pi, args, ticket_n[i]);
+  }
+
+  // sleep(3);
+
+  g_thread_new("run_scheduler_main_thread", scheduler_run, data);
+
   // scheduler_run();
-  // g_print("\x1b[1m"
-  //         "Finished running all tasks!"
-  //         "\x1b[0m"
-  //         "\n");
+
+  g_print("\x1b[1m"
+          "Finished running all tasks!"
+          "\x1b[0m"
+          "\n");
 
   g_print("end\n");
 }

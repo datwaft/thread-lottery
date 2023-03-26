@@ -16,6 +16,16 @@ void calculate_pi(args_t *args, scheduler_config_t config) {
   args->result = 4 * args->result;
 }
 
+void update_ui(GtkWidget *widget, double result, double progress_percent) {
+  char result_str[30];
+  sprintf(result_str, "%0.7f", result);
+  gtk_label_set_text(GTK_LABEL(gtk_grid_get_child_at(GTK_GRID(widget), 2, 0)),
+                     result_str);
+  gtk_progress_bar_set_fraction(
+      GTK_PROGRESS_BAR(gtk_grid_get_child_at(GTK_GRID(widget), 1, 0)),
+      progress_percent);
+}
+
 void on_start(size_t id, args_t *args) {
   int color = (id % (37 - 31)) + 31;
   printf("\x1b[2m"
@@ -27,6 +37,7 @@ void on_start(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id);
+  update_ui(args->row, args->result, (args->i / (double_t)args->n));
 }
 
 void on_continue(size_t id, args_t *args) {
@@ -40,6 +51,7 @@ void on_continue(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id);
+  update_ui(args->row, args->result, (args->i / (double_t)args->n));
 }
 
 void on_pause(size_t id, args_t *args) {
@@ -61,6 +73,7 @@ void on_pause(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id, 4 * args->result, (args->i / (double_t)args->n) * 100);
+  update_ui(args->row, args->result, (args->i / (double_t)args->n));
 }
 
 void on_end(size_t id, args_t *args) {
@@ -80,4 +93,5 @@ void on_end(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id, args->n, args->result);
+  update_ui(args->row, args->result, (args->i / (double_t)args->n));
 }

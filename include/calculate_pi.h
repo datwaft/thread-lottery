@@ -1,6 +1,7 @@
 #ifndef CALCULATE_PI_H
 #define CALCULATE_PI_H
 
+#include "gui.h"
 #include "scheduler.h"
 #include <stdint.h>
 
@@ -10,6 +11,7 @@ typedef struct args_st {
   double result;
   double divisor;
   int8_t sign;
+  GtkWidget *row;
 } args_t;
 
 void calculate_pi(args_t *args, scheduler_config_t config);
