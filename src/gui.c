@@ -13,16 +13,20 @@
 
 #define PREEMPTIVE 0
 #define NON_PREEMPTIVE 1
-#define PREEMPTIVE_YIELD 100
-#define NON_PREEMPTIVE_YIELD 10
 #define INVALID 999
 #define MIN_TICKET 1
 #define MAX_TICKET 1000
 #define MIN_WORK 1
-#define MAX_WORK 1000
+#define MAX_WORK 10000000
 #define DEFAULT_THREAD_NUM 5
 #define DEFAULT_TICKET 5
-#define DEFAULT_WORK 200
+#define DEFAULT_WORK 100000
+#define DEFAULT_PREEMPTIVE_YIELD 100
+#define DEFAULT_NON_PREEMPTIVE_YIELD 10
+#define MIN_PREEMPTIVE_YIELD 100
+#define MAX_PREEMPTIVE_YIELD 10000
+#define MIN_NON_PREEMPTIVE_YIELD 1
+#define MAX_NON_PREEMPTIVE_YIELD 100
 
 typedef struct gui_t {
   float progress;
@@ -45,6 +49,7 @@ typedef struct gui_t {
   GtkWidget *generic_progress_bar;
   GtkWidget *box_thread_config;
   GtkWidget *box_thread_execution;
+  GtkAdjustment *adjustment_yield;
 } gui_t;
 
 GtkApplication *application_new(void) {
@@ -90,6 +95,9 @@ void application_on_activate(GtkApplication *app, gpointer user_data) {
 
   gui.box_thread_config =
       GTK_WIDGET(gtk_builder_get_object(builder, "box_thread_config"));
+
+  gui.adjustment_yield =
+      GTK_ADJUSTMENT(gtk_builder_get_object(builder, "adjustment_yield"));
 
   generate_thread_conf_row(gui.default_thread_num, &gui);
 
@@ -153,6 +161,9 @@ GtkWidget *generate_thread_execution_row(int thread_id, gpointer data) {
   gtk_box_pack_start(GTK_BOX(gui->box_thread_execution), grid_row, FALSE, FALSE,
                      3);
 
+  const static GdkRGBA red = {
+      .red = 1.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
+  gtk_widget_override_color(label_thread_id, GTK_STATE_FLAG_NORMAL, &red);
   gtk_widget_show(label_thread_id);
   gtk_widget_show(progress_bar_thread);
   gtk_widget_show(label_thread_result);
@@ -292,17 +303,16 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
 
     ticket_n[_thread] = ticket_column_value;
     // work_n[_thread] = pow(10, _thread + 3);
-    work_n[_thread] = 10000000;
+    // work_n[_thread] = 1000000;
+    work_n[_thread] = work_column_value;
 
     children = children->next;
     _thread++;
   }
 
-  // generate_thread_execution_row(_thread_num, data);
-
   scheduler_config_t config = {.preemptive = !_cb_operation_mode,
-                               .percentage_of_work_before_pause = 0.05,
-                               .quantum_msec = 100};
+                               .percentage_of_work_before_pause = _yield,
+                               .quantum_msec = _yield};
 
   scheduler_init(config);
   scheduler_on_start((scheduler_cf_addr_t)on_start);
@@ -323,10 +333,7 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
     scheduler_create_task((scheduler_f_addr_t)calculate_pi, args, ticket_n[i]);
   }
 
-  // sleep(3);
-
   g_thread_new("run_scheduler_main_thread", scheduler_run, data);
-
   // scheduler_run();
 
   g_print("\x1b[1m"
@@ -362,7 +369,9 @@ void on_sbutton_changed(GtkComboBox *widget, gpointer data) {
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_thread_num),
                               gui->default_thread_num);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_yield),
-                              PREEMPTIVE_YIELD);
+                              DEFAULT_PREEMPTIVE_YIELD);
+    gtk_adjustment_set_lower(gui->adjustment_yield, MIN_PREEMPTIVE_YIELD);
+    gtk_adjustment_set_upper(gui->adjustment_yield, MAX_PREEMPTIVE_YIELD);
     break;
   case NON_PREEMPTIVE:
     g_print("Operation Mode: %d\n", NON_PREEMPTIVE);
@@ -382,7 +391,10 @@ void on_sbutton_changed(GtkComboBox *widget, gpointer data) {
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_thread_num),
                               gui->default_thread_num);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_yield),
-                              NON_PREEMPTIVE_YIELD);
+                              DEFAULT_NON_PREEMPTIVE_YIELD);
+    gtk_adjustment_set_lower(gui->adjustment_yield, MIN_NON_PREEMPTIVE_YIELD);
+    gtk_adjustment_set_upper(gui->adjustment_yield, MAX_NON_PREEMPTIVE_YIELD);
+
     break;
   default:
     gui->operation_mode = INVALID;
