@@ -14,7 +14,11 @@ void window_on_delete_event(GtkWidget *widget, gpointer user_data);
 
 void generate_thread_conf_row(int threads_num, gpointer data);
 
+void generate_thread_execution_row(int threads_num, gpointer data);
+
 void clear_thread_conf_row(gpointer data);
+
+void clear_thread_execution_row(gpointer data);
 
 void on_changed_sbtn_thread_num(GtkComboBox *widget, gpointer data);
 
