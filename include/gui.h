@@ -27,19 +27,8 @@
 #define DEFAULT_NON_PREEMPTIVE_YIELD 10
 
 typedef struct user_data_st {
+  GtkBuilder *builder;
   int operation_mode;
-  GtkWidget *window_main;
-  GtkWidget *button_execute;
-  GtkWidget *spin_thread_num;
-  GtkWidget *spin_yield;
-  GtkWidget *cb_operation_mode;
-  GtkWidget *label_quantum_or_percentage;
-  GtkWidget *entry_quantum_or_percentage;
-  GtkWidget *label_unit;
-  GtkWidget *generic_progress_bar;
-  GtkWidget *box_thread_config;
-  GtkWidget *box_thread_execution;
-  GtkAdjustment *adjustment_yield;
 } user_data_t;
 
 GtkApplication *application_new(void);
@@ -61,6 +50,6 @@ void on_changed_sbtn_thread_num(GtkComboBox *widget, user_data_t *user_data);
 
 void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data);
 
-void on_sbutton_changed(GtkComboBox *widget, user_data_t *user_data);
+void on_mode_change(GtkComboBox *widget, user_data_t *user_data);
 
 #endif // !GUI_H

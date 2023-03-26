@@ -55,7 +55,7 @@
                 <property name="height-request">40</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <signal name="changed" handler="on_sbutton_changed" swapped="no" />
+                <signal name="changed" handler="on_mode_change" swapped="no" />
                 <items>
                   <item translatable="yes">Expropiativo</item>
                   <item translatable="yes">No Expropiativo</item>
