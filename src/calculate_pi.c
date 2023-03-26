@@ -49,7 +49,7 @@ void on_start(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id);
-  update_ui(args->row, args->result, (args->i / (double_t)args->n));
+  update_ui(args->row, args->result * 4, (args->i / (double_t)args->n));
 }
 
 void on_continue(size_t id, args_t *args) {
@@ -63,7 +63,7 @@ void on_continue(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id);
-  update_ui(args->row, args->result, (args->i / (double_t)args->n));
+  update_ui(args->row, args->result * 4, (args->i / (double_t)args->n));
 }
 
 void on_pause(size_t id, args_t *args) {
@@ -85,7 +85,7 @@ void on_pause(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id, 4 * args->result, (args->i / (double_t)args->n) * 100);
-  update_ui(args->row, args->result, (args->i / (double_t)args->n));
+  update_ui(args->row, args->result * 4, (args->i / (double_t)args->n));
 }
 
 void on_end(size_t id, args_t *args) {
