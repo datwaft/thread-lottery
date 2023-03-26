@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define SCHEDULER_STACK_SIZE 1024 * 1024
+#define SCHEDULER_STACK_SIZE 1 << 30
 
 // Scheduler configuration type.
 typedef struct scheduler_config_st {

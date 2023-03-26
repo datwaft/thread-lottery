@@ -28,7 +28,11 @@ typedef struct task_st {
   scheduler_f_addr_t f_addr;
   void *f_arg;
 
-  int8_t stack[SCHEDULER_STACK_SIZE];
+  struct {
+    void *bottom;
+    void *top;
+    int64_t size;
+  } stack;
 } task_t;
 
 enum {
@@ -42,7 +46,6 @@ static struct {
   scheduler_config_t config;
 
   size_t id;
-  bool finished;
 
   task_t *current_task;
   kvec_t(task_t *) tasks;
@@ -63,7 +66,6 @@ static void scheduler_set_timer(void);
 void scheduler_init(scheduler_config_t config) {
   scheduler.config = config;
   scheduler.id = 0;
-  scheduler.finished = false;
   scheduler.current_task = NULL;
   kv_init(scheduler.tasks);
   signal(SIGALRM, scheduler_timer_callback);
@@ -93,6 +95,9 @@ void scheduler_create_task(scheduler_f_addr_t f_addr, void *f_arg,
   task->ticket_n = ticket_n;
   task->f_addr = f_addr;
   task->f_arg = f_arg;
+  task->stack.size = SCHEDULER_STACK_SIZE;
+  task->stack.bottom = malloc(task->stack.size);
+  task->stack.top = task->stack.bottom + task->stack.size;
 
   kv_push(task_t *, scheduler.tasks, task);
 }
@@ -162,9 +167,7 @@ void scheduler_run(void) {
 }
 
 static void scheduler_timer_callback(int signum) {
-  if (!scheduler.finished) {
-    scheduler_pause_current_task();
-  }
+  scheduler_pause_current_task();
 }
 
 static void scheduler_set_timer(void) {
@@ -175,8 +178,10 @@ static void schedule(void) {
   task_t *next = scheduler_choose_task();
   // This only happens if there are no tasks to schedule.
   if (next == NULL) {
+    if (scheduler.config.preemptive) {
+      ualarm(0, 0); // Cancel last active alarm
+    }
     scheduler_free_task_list();
-    scheduler.finished = true;
     // NOTE: this is the only case in which this function may return.
     return;
   }
@@ -194,7 +199,7 @@ static void schedule(void) {
     }
 
     // Assign new stack.
-    asm volatile("mov %0, %%rsp" ::"rm"(next->stack + SCHEDULER_STACK_SIZE));
+    asm volatile("mov %0, %%rsp" ::"rm"(next->stack.top));
     // Run the task function.
     next->status = TASK_RUNNING;
     next->f_addr(next->f_arg, scheduler.config);
@@ -249,6 +254,7 @@ static task_t *scheduler_choose_task(void) {
 static void scheduler_free_current_task(void) {
   task_t *task = scheduler.current_task;
   scheduler.current_task = NULL;
+  free(task->stack.bottom);
   free(task);
 }
 
