@@ -74,10 +74,8 @@ void window_on_delete_event(GtkWidget *widget, gpointer user_data) {
   gtk_main_quit();
 }
 
-GtkWidget *generate_thread_execution_row(int thread_id, gpointer data) {
-  user_data_t *gui;
-  gui = (user_data_t *)data;
-
+GtkWidget *generate_thread_execution_row(int thread_id,
+                                         user_data_t *user_data) {
   // create one grid_row per row, 3 columns
   GtkWidget *grid_row;
   grid_row = gtk_grid_new();
@@ -105,8 +103,8 @@ GtkWidget *generate_thread_execution_row(int thread_id, gpointer data) {
   gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
   gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
 
-  gtk_box_pack_start(GTK_BOX(gui->box_thread_execution), grid_row, FALSE, FALSE,
-                     3);
+  gtk_box_pack_start(GTK_BOX(user_data->box_thread_execution), grid_row, FALSE,
+                     FALSE, 3);
 
   const static GdkRGBA red = {
       .red = 1.0, .green = 0.0, .blue = 0.0, .alpha = 1.0};
@@ -118,10 +116,7 @@ GtkWidget *generate_thread_execution_row(int thread_id, gpointer data) {
   return grid_row;
 }
 
-void generate_thread_conf_row(int threads_num, gpointer data) {
-  user_data_t *gui;
-  gui = (user_data_t *)data;
-
+void generate_thread_conf_row(int threads_num, user_data_t *user_data) {
   for (int i = 0; i < threads_num; i++) {
     // create one grid_row per row, 3 columns
     GtkWidget *grid_row;
@@ -134,12 +129,14 @@ void generate_thread_conf_row(int threads_num, gpointer data) {
     label_thread = gtk_label_new(str_thread_number);
 
     GtkAdjustment *adjustment_ticket;
-    adjustment_ticket = gtk_adjustment_new(gui->default_ticket, gui->min_ticket,
-                                           gui->max_ticket, 1.0, 5.0, 0.0);
+    adjustment_ticket =
+        gtk_adjustment_new(user_data->default_ticket, user_data->min_ticket,
+                           user_data->max_ticket, 1.0, 5.0, 0.0);
 
     GtkAdjustment *adjustment_work;
-    adjustment_work = gtk_adjustment_new(gui->default_work, gui->min_work,
-                                         gui->max_work, 1.0, 5.0, 0.0);
+    adjustment_work =
+        gtk_adjustment_new(user_data->default_work, user_data->min_work,
+                           user_data->max_work, 1.0, 5.0, 0.0);
 
     GtkWidget *sbtn_ticket;
     sbtn_ticket = gtk_spin_button_new(adjustment_ticket, 1.0, 0);
@@ -159,8 +156,8 @@ void generate_thread_conf_row(int threads_num, gpointer data) {
     gtk_grid_set_column_homogeneous(GTK_GRID(grid_row), TRUE);
     gtk_grid_set_column_spacing(GTK_GRID(grid_row), 3);
 
-    gtk_box_pack_start(GTK_BOX(gui->box_thread_config), grid_row, FALSE, FALSE,
-                       3);
+    gtk_box_pack_start(GTK_BOX(user_data->box_thread_config), grid_row, FALSE,
+                       FALSE, 3);
 
     gtk_widget_show(sbtn_ticket);
     gtk_widget_show(sbtn_work);
@@ -168,58 +165,48 @@ void generate_thread_conf_row(int threads_num, gpointer data) {
   }
 }
 
-void clear_thread_conf_row(gpointer data) {
-  user_data_t *gui;
-  gui = (user_data_t *)data;
-
+void clear_thread_conf_row(user_data_t *user_data) {
   GList *children =
-      gtk_container_get_children(GTK_CONTAINER(gui->box_thread_config));
+      gtk_container_get_children(GTK_CONTAINER(user_data->box_thread_config));
 
   while (children) {
-    gtk_container_remove(GTK_CONTAINER(gui->box_thread_config), children->data);
-    children = children->next;
-  }
-}
-
-void clear_thread_execution_row(gpointer data) {
-  user_data_t *gui;
-  gui = (user_data_t *)data;
-
-  GList *children =
-      gtk_container_get_children(GTK_CONTAINER(gui->box_thread_execution));
-
-  while (children) {
-    gtk_container_remove(GTK_CONTAINER(gui->box_thread_execution),
+    gtk_container_remove(GTK_CONTAINER(user_data->box_thread_config),
                          children->data);
     children = children->next;
   }
 }
 
-void on_changed_sbtn_thread_num(GtkComboBox *widget, gpointer data) {
-  user_data_t *gui;
-  gui = (user_data_t *)data;
+void clear_thread_execution_row(user_data_t *user_data) {
+  GList *children = gtk_container_get_children(
+      GTK_CONTAINER(user_data->box_thread_execution));
 
+  while (children) {
+    gtk_container_remove(GTK_CONTAINER(user_data->box_thread_execution),
+                         children->data);
+    children = children->next;
+  }
+}
+
+void on_changed_sbtn_thread_num(GtkComboBox *widget, user_data_t *user_data) {
   gint threads_to_generate =
-      gtk_spin_button_get_value(GTK_SPIN_BUTTON(gui->spin_thread_num));
+      gtk_spin_button_get_value(GTK_SPIN_BUTTON(user_data->spin_thread_num));
   g_print("Change in thread to generate: %i\n", threads_to_generate);
 
   // remove all children
-  clear_thread_conf_row(data);
+  clear_thread_conf_row(user_data);
 
-  generate_thread_conf_row(threads_to_generate, data);
+  generate_thread_conf_row(threads_to_generate, user_data);
 }
 
-void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
-  user_data_t *gui;
-  gui = (user_data_t *)data;
-
-  clear_thread_execution_row(data);
+void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
+  clear_thread_execution_row(user_data);
 
   gint _cb_operation_mode =
-      gtk_combo_box_get_active(GTK_COMBO_BOX(gui->cb_operation_mode));
+      gtk_combo_box_get_active(GTK_COMBO_BOX(user_data->cb_operation_mode));
   gint _thread_num =
-      gtk_spin_button_get_value(GTK_SPIN_BUTTON(gui->spin_thread_num));
-  gint _yield = gtk_spin_button_get_value(GTK_SPIN_BUTTON(gui->spin_yield));
+      gtk_spin_button_get_value(GTK_SPIN_BUTTON(user_data->spin_thread_num));
+  gint _yield =
+      gtk_spin_button_get_value(GTK_SPIN_BUTTON(user_data->spin_yield));
 
   g_print("\n --- Execution Configuration ---\n");
   g_print("Operation Mode: %i\n", _cb_operation_mode);
@@ -228,7 +215,7 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
 
   int _thread = 0;
   GList *children =
-      gtk_container_get_children(GTK_CONTAINER(gui->box_thread_config));
+      gtk_container_get_children(GTK_CONTAINER(user_data->box_thread_config));
 
   size_t thread_n = _thread_num;
 
@@ -275,12 +262,12 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
     args->result = 0;
     args->sign = 1;
     args->divisor = 1;
-    args->row = generate_thread_execution_row(i, data);
+    args->row = generate_thread_execution_row(i, user_data);
 
     scheduler_create_task((scheduler_f_addr_t)calculate_pi, args, ticket_n[i]);
   }
 
-  g_thread_new("run_scheduler_main_thread", scheduler_run, data);
+  g_thread_new("run_scheduler_main_thread", scheduler_run, user_data);
   // scheduler_run();
 
   g_print("\x1b[1m"
@@ -291,60 +278,59 @@ void on_button_execute_clicked(GtkWidget *widget, gpointer data) {
   g_print("end\n");
 }
 
-void on_sbutton_changed(GtkComboBox *widget, gpointer data) {
-  user_data_t *gui;
-  gui = (user_data_t *)data;
-
+void on_sbutton_changed(GtkComboBox *widget, user_data_t *user_data) {
   gint active_selection =
-      gtk_combo_box_get_active(GTK_COMBO_BOX(gui->cb_operation_mode));
+      gtk_combo_box_get_active(GTK_COMBO_BOX(user_data->cb_operation_mode));
 
   switch (active_selection) {
   case PREEMPTIVE:
     g_print("Operation Mode: %d\n", PREEMPTIVE);
-    gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
+    gtk_label_set_text(GTK_LABEL(user_data->label_quantum_or_percentage),
                        "Tamaño Quantum(ms)");
-    gui->operation_mode = PREEMPTIVE;
+    user_data->operation_mode = PREEMPTIVE;
 
     // enable button
-    gtk_widget_set_sensitive(gui->button_execute, TRUE);
+    gtk_widget_set_sensitive(user_data->button_execute, TRUE);
 
     // reset to default values
-    clear_thread_conf_row(data);
+    clear_thread_conf_row(user_data);
 
-    generate_thread_conf_row(gui->default_thread_num, data);
+    generate_thread_conf_row(user_data->default_thread_num, user_data);
 
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_thread_num),
-                              gui->default_thread_num);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_yield),
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data->spin_thread_num),
+                              user_data->default_thread_num);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data->spin_yield),
                               DEFAULT_PREEMPTIVE_YIELD);
-    gtk_adjustment_set_lower(gui->adjustment_yield, MIN_PREEMPTIVE_YIELD);
-    gtk_adjustment_set_upper(gui->adjustment_yield, MAX_PREEMPTIVE_YIELD);
+    gtk_adjustment_set_lower(user_data->adjustment_yield, MIN_PREEMPTIVE_YIELD);
+    gtk_adjustment_set_upper(user_data->adjustment_yield, MAX_PREEMPTIVE_YIELD);
     break;
   case NON_PREEMPTIVE:
     g_print("Operation Mode: %d\n", NON_PREEMPTIVE);
-    gtk_label_set_text(GTK_LABEL(gui->label_quantum_or_percentage),
+    gtk_label_set_text(GTK_LABEL(user_data->label_quantum_or_percentage),
                        "Trabajo Mínimo(%)");
 
-    gui->operation_mode = NON_PREEMPTIVE;
+    user_data->operation_mode = NON_PREEMPTIVE;
 
     // enable button
-    gtk_widget_set_sensitive(gui->button_execute, TRUE);
+    gtk_widget_set_sensitive(user_data->button_execute, TRUE);
 
     // reset to default values
-    clear_thread_conf_row(data);
+    clear_thread_conf_row(user_data);
 
-    generate_thread_conf_row(gui->default_thread_num, data);
+    generate_thread_conf_row(user_data->default_thread_num, user_data);
 
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_thread_num),
-                              gui->default_thread_num);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(gui->spin_yield),
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data->spin_thread_num),
+                              user_data->default_thread_num);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(user_data->spin_yield),
                               DEFAULT_NON_PREEMPTIVE_YIELD);
-    gtk_adjustment_set_lower(gui->adjustment_yield, MIN_NON_PREEMPTIVE_YIELD);
-    gtk_adjustment_set_upper(gui->adjustment_yield, MAX_NON_PREEMPTIVE_YIELD);
+    gtk_adjustment_set_lower(user_data->adjustment_yield,
+                             MIN_NON_PREEMPTIVE_YIELD);
+    gtk_adjustment_set_upper(user_data->adjustment_yield,
+                             MAX_NON_PREEMPTIVE_YIELD);
 
     break;
   default:
-    gui->operation_mode = INVALID;
+    user_data->operation_mode = INVALID;
     g_print("Operation Mode: non selected %d\n", INVALID);
     break;
   }
