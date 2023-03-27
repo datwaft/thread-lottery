@@ -114,8 +114,7 @@ void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
     scheduler_create_task((scheduler_f_addr_t)calculate_pi, args, ticket_n[i]);
   }
 
-  g_thread_new("run_scheduler_main_thread", (GThreadFunc)execute_scheduler,
-               user_data);
+  execute_scheduler(user_data);
 }
 
 void on_mode_change(GtkComboBox *widget, user_data_t *user_data) {
@@ -142,9 +141,9 @@ void on_mode_change(GtkComboBox *widget, user_data_t *user_data) {
 }
 
 static gpointer execute_scheduler(user_data_t *user_data) {
-  g_idle_add((GSourceFunc)disable_widgets, user_data);
+  disable_widgets(user_data);
   scheduler_run();
-  g_idle_add((GSourceFunc)enable_widgets, user_data);
+  enable_widgets(user_data);
   return NULL;
 }
 

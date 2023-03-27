@@ -28,7 +28,7 @@ void on_start(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id + 1);
-  g_idle_add((GSourceFunc)update_ui, args);
+  update_ui(args);
 }
 
 void on_continue(size_t id, args_t *args) {
@@ -42,7 +42,7 @@ void on_continue(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id + 1);
-  g_idle_add((GSourceFunc)update_ui, args);
+  update_ui(args);
 }
 
 void on_pause(size_t id, args_t *args) {
@@ -64,7 +64,7 @@ void on_pause(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id + 1, 4 * args->result, (args->i / (double_t)args->n) * 100);
-  g_idle_add((GSourceFunc)update_ui, args);
+  update_ui(args);
 }
 
 void on_end(size_t id, args_t *args) {
@@ -84,7 +84,7 @@ void on_end(size_t id, args_t *args) {
          "\x1b[0m"
          "\n",
          color, id + 1, args->n, 4 * args->result);
-  g_idle_add((GSourceFunc)update_ui, args);
+  update_ui(args);
 }
 
 static void update_ui(args_t *args) {
@@ -106,5 +106,8 @@ static void update_ui(args_t *args) {
                               GTK_STATE_FLAG_NORMAL,
                               &(GdkRGBA){.green = 1.0, .alpha = 1.0});
 #pragma clang diagnostic pop
+  }
+  while (g_main_context_pending(NULL)) {
+    g_main_context_iteration(NULL, FALSE);
   }
 }
