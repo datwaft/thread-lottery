@@ -28,7 +28,6 @@
 
 typedef struct user_data_st {
   GtkBuilder *builder;
-  int operation_mode;
 } user_data_t;
 
 GtkApplication *application_new(void);

@@ -28,7 +28,6 @@ GtkApplication *application_new(void) {
 void application_on_activate(GtkApplication *app, gpointer _) {
   user_data_t user_data = {
       .builder = gtk_builder_new_from_resource(TEMPLATE_URI),
-      .operation_mode = INVALID,
   };
   gtk_builder_connect_signals(user_data.builder, &user_data);
 
@@ -68,43 +67,30 @@ void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
   GtkSpinButton *spin_yield =
       GTK_SPIN_BUTTON(gtk_builder_get_object(user_data->builder, "spin_yield"));
 
-  gint _cb_operation_mode = gtk_combo_box_get_active(cb_operation_mode);
-  gint _thread_num = gtk_spin_button_get_value(spin_thread_num);
-  gint _yield = gtk_spin_button_get_value(spin_yield);
-
-  int _thread = 0;
+  bool preemptive = !gtk_combo_box_get_active(cb_operation_mode);
+  gint task_n = gtk_spin_button_get_value(spin_thread_num);
+  gint yield = gtk_spin_button_get_value(spin_yield);
 
   GtkContainer *box_thread_config = GTK_CONTAINER(
       gtk_builder_get_object(user_data->builder, "box_thread_config"));
   GList *children = gtk_container_get_children(box_thread_config);
 
-  size_t thread_n = _thread_num;
+  uint64_t ticket_n[task_n];
+  int64_t work_n[task_n];
 
-  uint64_t ticket_n[thread_n];
-  int64_t work_n[thread_n];
-
-  // get generated values of the thread conf box
-  while (children) {
-
-    // we can start creating task here
+  for (gint i = 0; children; ++i, children = children->next) {
     gint ticket_column_value = gtk_spin_button_get_value(
         GTK_SPIN_BUTTON(gtk_grid_get_child_at(GTK_GRID(children->data), 1, 0)));
-
     gint work_column_value = gtk_spin_button_get_value(
         GTK_SPIN_BUTTON(gtk_grid_get_child_at(GTK_GRID(children->data), 2, 0)));
-
-    ticket_n[_thread] = ticket_column_value;
-    // work_n[_thread] = pow(10, _thread + 3);
-    // work_n[_thread] = 1000000;
-    work_n[_thread] = work_column_value;
-
-    children = children->next;
-    _thread++;
+    ticket_n[i] = ticket_column_value;
+    work_n[i] = work_column_value;
   }
 
-  scheduler_config_t config = {.preemptive = !_cb_operation_mode,
-                               .percentage_of_work_before_pause = _yield,
-                               .quantum_msec = _yield};
+  scheduler_config_t config = {.preemptive = preemptive,
+                               .percentage_of_work_before_pause =
+                                   (double)yield / 100,
+                               .quantum_msec = yield};
 
   scheduler_init(config);
   scheduler_on_start((scheduler_cf_addr_t)on_start);
@@ -112,7 +98,7 @@ void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
   scheduler_on_pause((scheduler_cf_addr_t)on_pause);
   scheduler_on_end((scheduler_cf_addr_t)on_end);
 
-  for (size_t i = 0; i < thread_n; ++i) {
+  for (gint i = 0; i < task_n; ++i) {
     args_t *args = malloc(sizeof(args_t));
 
     args->i = 0;
@@ -137,22 +123,17 @@ void on_mode_change(GtkComboBox *widget, user_data_t *user_data) {
   GtkLabel *label_quantum_or_percentage = GTK_LABEL(gtk_builder_get_object(
       user_data->builder, "label_quantum_or_percentage"));
 
-  gint active_selection = gtk_combo_box_get_active(cb_operation_mode);
+  gint mode = gtk_combo_box_get_active(cb_operation_mode);
   gtk_widget_set_sensitive(button_execute, TRUE);
 
-  switch (active_selection) {
+  switch (mode) {
   case PREEMPTIVE:
     gtk_label_set_text(label_quantum_or_percentage, "Tamaño Quantum(ms)");
-    user_data->operation_mode = PREEMPTIVE;
-    reset_parameters(user_data, user_data->operation_mode);
+    reset_parameters(user_data, true);
     break;
   case NON_PREEMPTIVE:
     gtk_label_set_text(label_quantum_or_percentage, "Trabajo Mínimo(%)");
-    user_data->operation_mode = NON_PREEMPTIVE;
-    reset_parameters(user_data, user_data->operation_mode);
-    break;
-  default:
-    user_data->operation_mode = INVALID;
+    reset_parameters(user_data, false);
     break;
   }
 }
@@ -266,12 +247,12 @@ static void reset_parameters(user_data_t *user_data, bool preemptive) {
   gtk_spin_button_set_value(spin_thread_num, DEFAULT_THREAD_NUM);
   // Make yield the default value.
   if (preemptive) {
-    gtk_spin_button_set_value(spin_yield, DEFAULT_PREEMPTIVE_YIELD);
     gtk_adjustment_set_lower(adjustment_yield, MIN_PREEMPTIVE_YIELD);
     gtk_adjustment_set_upper(adjustment_yield, MAX_PREEMPTIVE_YIELD);
+    gtk_spin_button_set_value(spin_yield, DEFAULT_PREEMPTIVE_YIELD);
   } else {
-    gtk_spin_button_set_value(spin_yield, DEFAULT_NON_PREEMPTIVE_YIELD);
     gtk_adjustment_set_lower(adjustment_yield, MIN_NON_PREEMPTIVE_YIELD);
     gtk_adjustment_set_upper(adjustment_yield, MAX_NON_PREEMPTIVE_YIELD);
+    gtk_spin_button_set_value(spin_yield, DEFAULT_NON_PREEMPTIVE_YIELD);
   }
 }

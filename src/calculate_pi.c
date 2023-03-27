@@ -91,18 +91,15 @@ void on_end(size_t id, args_t *args) {
 
 static void update_ui(GtkWidget *widget, double result,
                       double progress_percent) {
-  // result label
-  char result_str[30];
+  char result_str[30]; // Probably won't require more than 30 digits.
   sprintf(result_str, "%0.20f", result);
   gtk_label_set_text(GTK_LABEL(gtk_grid_get_child_at(GTK_GRID(widget), 2, 0)),
                      result_str);
 
-  // progress bar
   gtk_progress_bar_set_fraction(
       GTK_PROGRESS_BAR(gtk_grid_get_child_at(GTK_GRID(widget), 1, 0)),
       progress_percent);
 
-  // done result coloring
   if (progress_percent >= 1.0) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
