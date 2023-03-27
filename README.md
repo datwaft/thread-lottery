@@ -25,10 +25,11 @@ make
 
 **Modo Operación:** define el modo de operación con el cual se ejecutara todos los `Threads` dentro del `scheduler`.
 
-**Numero de `Threads`**: define la cantidad de `Threads` para ser ejecutado por `scheduler`.
+**Número de `Threads`**: define la cantidad de `Threads` para ser ejecutado por `scheduler`.
 
 - Cantidad por defecto: 5 `Threads`.
 - Cantidad mínima: 5 `Threads`.
+- Cantidad máxima: "el adecuado".
 
 **Trabajo Mínimo:**
 
@@ -62,7 +63,7 @@ make
 
 En la columna de `Thread #` se desplegara el `id` del `Thread` correspondiente en la configuración. La representación de color es la siguiente:
 
-- Rojo: `Thread` con trabajo en progreso.
+- Rojo: `Thread` con trabajo pendiente.
 - Verde: `Thread` con trabajo completado.
 
 En la columna de `Progreso` se despliega la barra de progreso actualizado en tiempo real con respecto al trabajo realizado.
