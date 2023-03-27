@@ -12,3 +12,6 @@ compile_commands.json
 
 # Glade temporal files
 *~
+
+# MacOS cache
+.DS_Store
