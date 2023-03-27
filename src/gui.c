@@ -190,7 +190,7 @@ static GtkWidget *generate_execution_row(int row, user_data_t *user_data) {
   GtkWidget *grid_row = gtk_grid_new();
 
   char row_str[5]; // We probably won't need more than 5 digits.
-  sprintf(row_str, "%d", row);
+  sprintf(row_str, "%d", row + 1);
   GtkWidget *label_row = gtk_label_new(row_str);
 
   GtkWidget *progress_bar = gtk_progress_bar_new();

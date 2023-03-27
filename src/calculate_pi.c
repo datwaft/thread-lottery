@@ -1,8 +1,7 @@
 #include "calculate_pi.h"
 #include <stdio.h>
 
-static void update_ui(GtkWidget *widget, double result,
-                      double progress_percent);
+static void update_ui(args_t *args);
 
 void calculate_pi(args_t *args, scheduler_config_t config) {
   for (; args->i < args->n; args->i += 1) {
@@ -16,7 +15,6 @@ void calculate_pi(args_t *args, scheduler_config_t config) {
       scheduler_pause_current_task();
     }
   }
-  args->result = 4 * args->result;
 }
 
 void on_start(size_t id, args_t *args) {
@@ -29,8 +27,8 @@ void on_start(size_t id, args_t *args) {
          "."
          "\x1b[0m"
          "\n",
-         color, id);
-  update_ui(args->row, args->result * 4, (args->i / (double_t)args->n));
+         color, id + 1);
+  g_idle_add((GSourceFunc)update_ui, args);
 }
 
 void on_continue(size_t id, args_t *args) {
@@ -43,8 +41,8 @@ void on_continue(size_t id, args_t *args) {
          "."
          "\x1b[0m"
          "\n",
-         color, id);
-  update_ui(args->row, args->result * 4, (args->i / (double_t)args->n));
+         color, id + 1);
+  g_idle_add((GSourceFunc)update_ui, args);
 }
 
 void on_pause(size_t id, args_t *args) {
@@ -65,8 +63,8 @@ void on_pause(size_t id, args_t *args) {
          " of the work done."
          "\x1b[0m"
          "\n",
-         color, id, 4 * args->result, (args->i / (double_t)args->n) * 100);
-  update_ui(args->row, args->result * 4, (args->i / (double_t)args->n));
+         color, id + 1, 4 * args->result, (args->i / (double_t)args->n) * 100);
+  g_idle_add((GSourceFunc)update_ui, args);
 }
 
 void on_end(size_t id, args_t *args) {
@@ -85,25 +83,26 @@ void on_end(size_t id, args_t *args) {
          "%.10f"
          "\x1b[0m"
          "\n",
-         color, id, args->n, args->result);
-  update_ui(args->row, args->result, (args->i / (double_t)args->n));
+         color, id + 1, args->n, 4 * args->result);
+  g_idle_add((GSourceFunc)update_ui, args);
 }
 
-static void update_ui(GtkWidget *widget, double result,
-                      double progress_percent) {
+static void update_ui(args_t *args) {
+  double progress = ((double)args->i / (double)args->n);
+
   char result_str[30]; // Probably won't require more than 30 digits.
-  sprintf(result_str, "%0.20f", result);
-  gtk_label_set_text(GTK_LABEL(gtk_grid_get_child_at(GTK_GRID(widget), 2, 0)),
-                     result_str);
+  sprintf(result_str, "%0.20f", args->result * 4);
+  gtk_label_set_text(
+      GTK_LABEL(gtk_grid_get_child_at(GTK_GRID(args->row), 2, 0)), result_str);
 
   gtk_progress_bar_set_fraction(
-      GTK_PROGRESS_BAR(gtk_grid_get_child_at(GTK_GRID(widget), 1, 0)),
-      progress_percent);
+      GTK_PROGRESS_BAR(gtk_grid_get_child_at(GTK_GRID(args->row), 1, 0)),
+      progress);
 
-  if (progress_percent >= 1.0) {
+  if (progress >= 1.0) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    gtk_widget_override_color(gtk_grid_get_child_at(GTK_GRID(widget), 0, 0),
+    gtk_widget_override_color(gtk_grid_get_child_at(GTK_GRID(args->row), 0, 0),
                               GTK_STATE_FLAG_NORMAL,
                               &(GdkRGBA){.green = 1.0, .alpha = 1.0});
 #pragma clang diagnostic pop
