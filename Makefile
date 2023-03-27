@@ -113,7 +113,10 @@ $(OBJ_DIR)/%.o: $(SRC_BUILD_DIR)/%.c
 # Distribution rule
 # =================
 $(DIST): $(TARGET_SRC) $(SRCS) $(HEADERS) $(RESOURCE_INDEX) $(RESOURCES) $(TEST_SRCS) $(MAKEFILE) $(DOCUMENTATION)
-	tar -zcvf $@ $^
+	mkdir $(basename $@)
+	cp $^ $(basename $@)
+	tar -zcvf $@ $(basename $@)
+	rm -r $(basename $@)
 
 # ========================
 # Pseudo-target definition
