@@ -54,9 +54,7 @@ make
 - **Cantidad de Trabajo:** define la unidad de trabajo del `Thread` para realizar el `cálculo de pi`.
 
   - Cantidad de trabajo por defecto: 100000.
-
   - Cantidad de trabajo mínimo: 1.
-
   - Cantidad de trabajo máximo: 10000000.
 
 ### Ejecución
@@ -99,7 +97,6 @@ En esta configuración
 En esta configuración:
 
 - `Thread 1` posee la mayoría de boletos (500), por lo tanto, su trabajo es terminado primero. 
-
 - `Thread 2` posee la segunda mayoría de boletos (200). Por lo tanto termina de segundo.
 - `Thread 3` y `Thread 4` poseen la tercera mayoría de boletos (50). Por lo que compiten entre sí, y tienen un avance de ejecución mayor que el resto pendiente.
 - El resto de los `Threads` compiten entre sí hasta completar su trabajo.
