@@ -58,7 +58,7 @@ TEST_TARGETS := $(TEST_SRCS:$(TEST_DIR)/%.c=$(TEST_BUILD_DIR)/%)
 # ----------------------
 # Distribution variables
 # ----------------------
-DIST := Abreu-Chaves-Guevara-Ortiz-Yip.tgz
+DIST := Abreu-Guevara-Ortiz-Yip.tgz
 
 # ---------------------
 # Compilation variables
