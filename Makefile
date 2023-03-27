@@ -119,6 +119,12 @@ $(DIST): $(SRC_DIR) $(HEADER_DIR) $(RESOURCE_INDEX) $(RESOURCES_DIR) $(TEST_DIR)
 	rm -r $(basename $@)
 
 # ========================
+# Directory creation rules
+# ========================
+$(SRC_DIR) $(HEADER_DIR) $(RESOURCES_DIR) $(TEST_DIR):
+	mkdir -p $@
+
+# ========================
 # Pseudo-target definition
 # ========================
 .PHONY: test
