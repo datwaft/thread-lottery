@@ -112,9 +112,9 @@ $(OBJ_DIR)/%.o: $(SRC_BUILD_DIR)/%.c
 # =================
 # Distribution rule
 # =================
-$(DIST): $(TARGET_SRC) $(SRCS) $(HEADERS) $(RESOURCE_INDEX) $(RESOURCES) $(TEST_SRCS) $(MAKEFILE) $(DOCUMENTATION)
+$(DIST): $(SRC_DIR) $(HEADER_DIR) $(RESOURCE_INDEX) $(RESOURCES_DIR) $(TEST_DIR) $(MAKEFILE) $(DOCUMENTATION)
 	mkdir $(basename $@)
-	cp $^ $(basename $@)
+	cp -r $^ $(basename $@)
 	tar -zcvf $@ $(basename $@)
 	rm -r $(basename $@)
 
