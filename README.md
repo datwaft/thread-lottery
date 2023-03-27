@@ -1,4 +1,4 @@
-# `[SOA]` - Proyecto 1: Lotería de "*Threads*"
+# `[SOA]` - Proyecto 1: Lotería de "_Threads_"
 
 Tarea corta creada por:
 
@@ -12,6 +12,8 @@ Tarea corta creada por:
 ```sh
 # Primero se necesita o clonar el repositorio o extraer el tarball. e.g.
 tar -xvf Abreu-Guevara-Ortiz-Yip.tgz
+# Luego es necesario entrar al directorio extraído. e.g.
+cd Abreu-Guevara-Ortiz-Yip
 # Luego de eso se necesita compilar el proyecto.
 # Si clang no está instalado o se desea usar otro compilador ejecutar como: make CC=gcc
 make
@@ -33,7 +35,8 @@ make
 
 **Trabajo Mínimo:**
 
-- **Porcentaje (modo no expropiativo):** define el porcentaje de trabajo a realizar en el `Thread` antes de ceder el procesador. 
+- **Porcentaje (modo no expropiativo):** define el porcentaje de trabajo a realizar en el `Thread` antes de ceder el procesador.
+
   - Porcentaje por defecto: 10 (%)
   - Porcentaje mínimo: 1 (%)
   - Porcentaje máximo: 100 (%)
@@ -79,23 +82,21 @@ En la columna de `Resultado` se despliega el resultado actualizado en tiempo rea
 
 ## Ejemplo Caso Modo No Expropiativo
 
-En esta configuración 
+En esta configuración
 
 - `Thread 1` posee la mayoría de boletos (999), por lo tanto, su trabajo es terminado primero. A pesar de tener mayor cantidad de trabajo.
-- `Thread 2` posee la segunda mayoría de boletos (500). Por lo tanto termina de segundo.  A pesar de tener mayor cantidad de trabajo.
+- `Thread 2` posee la segunda mayoría de boletos (500). Por lo tanto termina de segundo. A pesar de tener mayor cantidad de trabajo.
 - El resto de los `Threads` compiten entre sí hasta completar su trabajo.
 
 ![non-preemptive-20230326204830440](https://user-images.githubusercontent.com/52944834/227838774-c88b6b05-eba3-4d21-909a-39cd6ae36b15.png)
 
 ![non-preemptive-20230326204852210](https://user-images.githubusercontent.com/52944834/227838775-0207bdd7-2a32-4a8e-ae8a-6e44a3eee82c.png)
 
-
-
 ## Ejemplo Caso Modo Expropiativo
 
 En esta configuración:
 
-- `Thread 1` posee la mayoría de boletos (500), por lo tanto, su trabajo es terminado primero. 
+- `Thread 1` posee la mayoría de boletos (500), por lo tanto, su trabajo es terminado primero.
 - `Thread 2` posee la segunda mayoría de boletos (200). Por lo tanto termina de segundo.
 - `Thread 3` y `Thread 4` poseen la tercera mayoría de boletos (50). Por lo que compiten entre sí, y tienen un avance de ejecución mayor que el resto pendiente.
 - El resto de los `Threads` compiten entre sí hasta completar su trabajo.
