@@ -51,7 +51,7 @@ make
   - Cantidad de boletos mínimo: 1.
   - Cantidad de boletos máximo: 1000.
 
-- **Cantidad de Trabajo:** define la unidad de trabajo del `Thread` para realizar el `calculo de pi`.
+- **Cantidad de Trabajo:** define la unidad de trabajo del `Thread` para realizar el `cálculo de pi`.
 
   - Cantidad de trabajo por defecto: 100000.
 
@@ -68,7 +68,7 @@ En la columna de `Thread #` se desplegara el `id` del `Thread` correspondiente e
 
 En la columna de `Progreso` se despliega la barra de progreso actualizado en tiempo real con respecto al trabajo realizado.
 
-En la columna de `Resultado` se despliega el resultado actualizado en tiempo real, y acumulado al momento de `calculo de pi`.
+En la columna de `Resultado` se despliega el resultado actualizado en tiempo real, y acumulado al momento de `cálculo de pi`.
 
 ![general-20230326195205884](https://user-images.githubusercontent.com/52944834/227838770-310ad4a0-ecb7-4c38-963d-ab25c9df41f8.png)
 
