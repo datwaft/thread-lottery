@@ -142,6 +142,10 @@ void scheduler_exit_current_task(void) {
 
 void scheduler_pause_current_task(void) {
   if (!sigsetjmp(scheduler.current_task->context, true)) {
+    // Cancel last active alarm
+    if (scheduler.config.preemptive) {
+      alarm(0);
+    }
     // Execute the 'on pause' callback.
     if (scheduler.on_pause) {
       scheduler.on_pause(scheduler.current_task->id,
@@ -178,9 +182,6 @@ static void schedule(void) {
   task_t *next = scheduler_choose_task();
   // This only happens if there are no tasks to schedule.
   if (next == NULL) {
-    if (scheduler.config.preemptive) {
-      ualarm(0, 0); // Cancel last active alarm
-    }
     scheduler_free_task_list();
     // NOTE: this is the only case in which this function may return.
     return;
@@ -188,14 +189,15 @@ static void schedule(void) {
 
   scheduler.current_task = next;
 
-  if (scheduler.config.preemptive) {
-    scheduler_set_timer();
-  }
-
   if (next->status == TASK_CREATED) {
-    // Execute 'on_start' callback
+    // Execute 'on_start' callback.
     if (scheduler.on_start) {
       scheduler.on_start(next->id, next->f_arg);
+    }
+
+    // Set timer.
+    if (scheduler.config.preemptive) {
+      scheduler_set_timer();
     }
 
     // Assign new stack.
@@ -204,13 +206,24 @@ static void schedule(void) {
     next->status = TASK_RUNNING;
     next->f_addr(next->f_arg, scheduler.config);
 
+    // Cancel last active alarm
+    if (scheduler.config.preemptive) {
+      alarm(0);
+    }
+
     // Exit the task.
     scheduler_exit_current_task();
   } else {
-    // Execute 'on_continue' callback
+    // Execute 'on_continue' callback.
     if (scheduler.on_continue) {
       scheduler.on_continue(next->id, next->f_arg);
     }
+
+    // Set timer.
+    if (scheduler.config.preemptive) {
+      scheduler_set_timer();
+    }
+
     // Go to the current task context.
     siglongjmp(next->context, true);
   }
