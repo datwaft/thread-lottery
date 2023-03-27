@@ -54,9 +54,7 @@ make
 - **Cantidad de Trabajo:** define la unidad de trabajo del `Thread` para realizar el `cálculo de pi`.
 
   - Cantidad de trabajo por defecto: 100000.
-
   - Cantidad de trabajo mínimo: 1.
-
   - Cantidad de trabajo máximo: 10000000.
 
 ### Ejecución
@@ -83,9 +81,8 @@ En la columna de `Resultado` se despliega el resultado actualizado en tiempo rea
 
 En esta configuración 
 
-- `Thread 1` posee la mayoría de boletos (999), por lo tanto, su trabajo es terminado primero.
-
-- `Thread 2` posee la segunda mayoría de boletos (500). Por lo tanto termina de segundo.
+- `Thread 1` posee la mayoría de boletos (999), por lo tanto, su trabajo es terminado primero. A pesar de tener mayor cantidad de trabajo.
+- `Thread 2` posee la segunda mayoría de boletos (500). Por lo tanto termina de segundo.  A pesar de tener mayor cantidad de trabajo.
 - El resto de los `Threads` compiten entre sí hasta completar su trabajo.
 
 ![non-preemptive-20230326204830440](https://user-images.githubusercontent.com/52944834/227838774-c88b6b05-eba3-4d21-909a-39cd6ae36b15.png)
@@ -99,7 +96,6 @@ En esta configuración
 En esta configuración:
 
 - `Thread 1` posee la mayoría de boletos (500), por lo tanto, su trabajo es terminado primero. 
-
 - `Thread 2` posee la segunda mayoría de boletos (200). Por lo tanto termina de segundo.
 - `Thread 3` y `Thread 4` poseen la tercera mayoría de boletos (50). Por lo que compiten entre sí, y tienen un avance de ejecución mayor que el resto pendiente.
 - El resto de los `Threads` compiten entre sí hasta completar su trabajo.
