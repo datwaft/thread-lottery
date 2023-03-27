@@ -11,6 +11,9 @@
 #include "deps/pcg_basic.h"
 #include "scheduler.h"
 
+static gpointer execute_scheduler(user_data_t *user_data);
+static void disable_widgets(user_data_t *user_data);
+static void enable_widgets(user_data_t *user_data);
 static void reset_parameters(user_data_t *user_data, bool preemptive);
 static void generate_configuration_rows(int row_n, user_data_t *user_data);
 static GtkWidget *generate_execution_row(int row, user_data_t *user_data);
@@ -111,7 +114,7 @@ void on_button_execute_clicked(GtkWidget *widget, user_data_t *user_data) {
     scheduler_create_task((scheduler_f_addr_t)calculate_pi, args, ticket_n[i]);
   }
 
-  g_thread_new("run_scheduler_main_thread", (GThreadFunc)scheduler_run,
+  g_thread_new("run_scheduler_main_thread", (GThreadFunc)execute_scheduler,
                user_data);
 }
 
@@ -136,6 +139,31 @@ void on_mode_change(GtkComboBox *widget, user_data_t *user_data) {
     reset_parameters(user_data, false);
     break;
   }
+}
+
+static gpointer execute_scheduler(user_data_t *user_data) {
+  g_idle_add((GSourceFunc)disable_widgets, user_data);
+  scheduler_run();
+  g_idle_add((GSourceFunc)enable_widgets, user_data);
+  return NULL;
+}
+
+static void disable_widgets(user_data_t *user_data) {
+  GtkWidget *button_execute =
+      GTK_WIDGET(gtk_builder_get_object(user_data->builder, "button_execute"));
+  GtkWidget *cb_operation_mode = GTK_WIDGET(
+      gtk_builder_get_object(user_data->builder, "cb_operation_mode"));
+  gtk_widget_set_sensitive(button_execute, false);
+  gtk_widget_set_sensitive(cb_operation_mode, false);
+}
+
+static void enable_widgets(user_data_t *user_data) {
+  GtkWidget *button_execute =
+      GTK_WIDGET(gtk_builder_get_object(user_data->builder, "button_execute"));
+  GtkWidget *cb_operation_mode = GTK_WIDGET(
+      gtk_builder_get_object(user_data->builder, "cb_operation_mode"));
+  gtk_widget_set_sensitive(button_execute, true);
+  gtk_widget_set_sensitive(cb_operation_mode, true);
 }
 
 static void clear_configuration_rows(user_data_t *user_data) {
